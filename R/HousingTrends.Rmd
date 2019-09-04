@@ -1,0 +1,378 @@
+---
+title: 'Housing Trends'
+author: "Evan Uribe"
+date: "July 22, 2019"
+output:
+  html_document:
+    code_folding: hide
+    theme: united
+    toc: true
+---
+
+### Summary
+Analyze the following dataset - 'Home Prices' - about median home prices in various cities in the US.
+Do some trend analysis as well as descriptive statistics, ANOVA by region, and t-tests, for cities and regions.
+
+Your code and plots should be embedded into your report, in a similar format as the other projects.
+Also, provide a concluding section at the end, interpreting the result of your analysis.
+Use this opportunity to practice professional reporting for your data analysis as well as practicing for your final project.
+
+
+```{r init}
+# initialization
+# remove global environment
+rm(list = ls())
+
+par(mfrow=c(1,1))
+
+dataFile = 'data/Home Prices.csv'
+
+```
+
+```{r cust_functions, comment=NA}
+
+shhh <- suppressPackageStartupMessages
+shhh(library(plotly))
+shhh(library(tidyr))
+
+
+### functions
+
+# distribution plots for each year
+distplot <- function (df, title) {
+  h <- hist(df, breaks=10, col="grey", xlab="price", main=title) 
+  xfit <- seq(min(df), max(df),length=40) 
+  yfit <- dnorm(xfit, mean=mean(df), sd=sd(df)) 
+  yfit <- yfit*diff(h$mids[1:2])*length(df) 
+  lines(xfit, yfit, col="blue", lwd=2)
+}
+
+# returns a new df with either the mean or median of year values
+getYearVals <- function(func='mean') {
+  years <- housing[,-c(1,2,3)]
+                  
+  if (func=='mean'){
+    mean<- sapply(years,FUN=mean)
+    return (mean)
+  }
+  else {
+    median<- sapply(years,FUN=median)
+    return (median)
+  }
+
+  yearvals = list(y04, y05,y06,y07,y08,y09,y10,y11,y12)
+  return (yearvals)
+}
+
+# returns a new df for the specified region with the mean values
+getRegionalMeans <- function(regionName, df) {
+  reg <- subset(df, df['Region'] == regionName)
+  reg <- reg[,-c(1,2,3)]
+  regValues <- sapply(reg,FUN=mean)
+  return (regValues)
+}
+
+#returns string w/o leading or trailing whitespace
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+
+# returs mean aggreation by year
+getRegionAggByYear<- function (year) {
+  if (year == '2012.p')
+    y <- '2012'
+  else
+    y <- as.numeric(year)
+  ag <- aggregate(housing[year], by=list(housing$Region), mean)
+  colnames(ag) <- c("Region", "Mean")
+  ag$year = c(y,y,y,y)
+  return (ag)
+}
+
+```
+
+```{r data_load, comment=NA}
+# load data
+
+options(width = 100)
+
+housing <- read.csv(dataFile, skip = 2, header = T)
+attach(housing, warn.conflicts=FALSE)
+
+# replace NA with 0's
+housing[is.na(housing)] = 0
+
+# R prefixes numeric fields (i.e. years) with X. Lets remove them
+names(housing) <- sub("^X", "", names(housing))
+
+# remove first column which is just blank
+housing = housing[,-c(1)]
+```
+
+
+```{r  comment=NA}
+# create a new df with year as a single column
+prices <- housing %>% gather(year, price, c(4:12))
+
+# update 2012.p to 2012
+prices$year[prices$year == "2012.p"] <- "2012"
+
+# make a copy for additional transformations
+prices2 <- data.frame(prices)
+
+# remove rows with 0 values
+prices2 = prices2[prices2$price != 0, ]
+
+#paste(prices2$Metropolitan.Area) # show what cities have white spaces, including leading/trailing
+prices2$Metropolitan.Area <- trim(prices2$Metropolitan.Area) # trim them
+
+#str (prices2)
+#head(prices2,5)
+#tail(prices2, 5)
+
+# means aggreation by Region
+y04 <- getRegionAggByYear('2004')
+y05 <- getRegionAggByYear('2005')
+y06 <- getRegionAggByYear('2006')
+y07 <- getRegionAggByYear('2007')
+y08 <- getRegionAggByYear('2008')
+y09 <- getRegionAggByYear('2009')
+y10 <- getRegionAggByYear('2010')
+y11 <- getRegionAggByYear('2011')
+y12 <- getRegionAggByYear('2012.p')
+```
+
+```{r  comment=NA}
+
+sprintf('housing dataset has %s rows and %s columns', nrow(housing), ncol(housing))
+head(housing, 3)
+
+```
+
+### Descriptive Statistics
+
+```{r comment=NA}
+
+# summary, exclude factors
+summary(housing[,-c(1,2,3)])
+```
+
+
+```{r comment=NA}
+
+par(mfrow=c(3,3)) 
+
+distplot(housing$`2004`, '2004')
+distplot(housing$`2005`, '2005')
+distplot(housing$`2006`, '2006')
+distplot(housing$`2007`, '2007')
+distplot(housing$`2008`, '2008')
+distplot(housing$`2009`, '2009')
+distplot(housing$`2010`, '2010')
+distplot(housing$`2011`, '2011')
+distplot(housing$`2012.p`, '2012')
+
+
+```
+
+We see that home prices are positively skewed. This is typical for home prices since most houses are sold at near the mean amount, however a few number of houses will sell for much higher.
+
+### Housing Price Trends
+
+```{r comment=NA}
+
+# plot average vs mean housing prices by year
+
+x  <- list(2004,2005,2006,2007,2008,2009,2010,2011,2012)
+y1 <- getYearVals()
+y2 <- getYearVals('median')
+
+plot_ly(x = x) %>%
+  add_lines(y = y1, color = I("blue"), name = "mean") %>%
+  add_lines(y = y2, color = I("green"), name = "median")
+```
+
+As observed in the plot, home prices had been steadily trending up, reaching an all time peak in 2007 and then rapidly declining to a low in 2009. This no doubt was a result of the subprime mortgage crisis. From 2009-2010, prices trended up again but then dipped sharply, reaching an all time low in 2011. From 2011 home prices have again been steadily climbing.
+
+```{r  comment=NA}
+
+# regional housing trends
+x  <- list(2004,2005,2006,2007,2008,2009,2010,2011,2012)
+
+cen = getRegionalMeans('Central', housing)
+ne = getRegionalMeans('Northeast', housing)
+se = getRegionalMeans('Southeast', housing)
+west = getRegionalMeans('West', housing)
+
+plot_ly(x = x) %>%
+  add_lines(y = cen, color = I("blue"), name = "Central") %>%
+  add_lines(y = ne, color = I("green"), name = "Northeast") %>%
+  add_lines(y = se, color = I("red"), name = "Southeast") %>%
+  add_lines(y = west, color = I("purple"), name = "West")
+
+```
+
+In general Central has the lowest housing prices, followed by Southeast. Northeast is in the middle and the West has the highest prices. These regional price trends are not unexpected. In all regions, we do see price dips corresponding to the great recession of 2008. However, the West saw the sharpest decline, not unexpected given its large disparity in home prices relatative to other regions. Pricing in Central is more stable without huge spikes, either high or low. The next two graphs more clearly shows pricing fluctuations by region and year.
+
+
+```{r comment=NA}
+
+years <- do.call("rbind", list(y04, y05, y06, y07, y08, y09, y10, y11, y12))
+
+x  <- list('Central', 'Northeast', 'Southeast', 'West')
+
+cen <- subset(years, years['Region'] == 'Central')
+cen <- cen[,-c(1)]
+ne <- subset(years, years['Region'] == 'Northeast')
+ne <- ne[,-c(1)]
+se <- subset(years, years['Region'] == 'Southeast')
+se <- se[,-c(1)]
+west <- subset(years, years['Region'] == 'West')
+west <- west[,-c(1)]
+
+library(ggplot2);
+
+
+ggplot(years, aes(as.factor(years$Region), years$Mean)) +
+    #geom_point(colour = factor(years$year))  + 
+    #geom_text(aes(label=years$year),hjust=0, vjust=0, size=7/.pt) +
+    #labs(y = "Home Prices (1000's)", x = "");
+
+geom_point(aes(color = factor(years$year))) +
+  labs(
+    x = "",
+    y = "Home Prices (1000's)",
+    #color = "Years"
+    color = ""
+  ) + theme(
+    legend.position = c(0.15, .95)
+    ,legend.justification = c("right", "top")
+  )
+
+
+```
+
+
+```{r}
+
+df <- prices2$price
+
+sprintf("The lowest median price (1000's) home is %s and the highest is %s", round(min(df)), round(max(df))) 
+
+sprintf("The average sales price (1000's) is %s and the median is %s", round(mean(df)), round(median(df)))
+
+ hist(df, col="grey", xlab="Home Price (1000's)", ylab = "Number of homes", main="Home Prices (2004-2012)") 
+
+```
+
+The distribution is positively skewed with a number of outliers where home prices were well above the average of 192,000.
+
+#### Housing price distributions by region
+
+```{r  comment=NA}
+
+par(mfrow=c(2,2))  
+
+cen <- subset(prices, prices['Region'] == 'Central')
+cen <- cen[,-c(1,2,3,4)]
+ne <- subset(prices, prices['Region'] == 'Northeast')
+ne <- ne[,-c(1,2,3,4)]
+se <- subset(prices, prices['Region'] == 'Southeast')
+se <- se[,-c(1,2,3,4)]
+west <- subset(prices, prices['Region'] == 'West')
+west <- west[,-c(1,2,3,4)]
+
+distplot(cen, 'Central')
+distplot(ne, 'Northeast')
+distplot(se, 'Southeast')
+distplot(west, 'West')
+
+
+```
+
+```{r}
+shhh(library(e1071))
+
+sprintf('(Central) Skew: %s Kurtosis: %s', skewness(cen), kurtosis(cen))
+sprintf('(Northeast) Skew: %s Kurtosis: %s', skewness(ne), kurtosis(ne))
+sprintf('(Southeast) Skew: %s Kurtosis: %s', skewness(se), kurtosis(se))
+sprintf('(West) Skew: %s Kurtosis: %s', skewness(west), kurtosis(west))
+
+```
+
+Central is approximately normally distributed, consistent with more stable housing prices. Northeast and Southeast exhibit moderate positive and negative skew, respectively. West exhibits high positive skew, also consistent with pricing in the West; certain areas such as the CA bayarea have very high housing prices relative to other western realestate markets.
+
+### ANOVA/ Students T Test
+
+<b>Run one-way ANOVA for all regions against home price.</b>
+
+
+```{r comment=NA}
+
+one.way<-aov(prices2$price ~ prices2$Region)
+summary(one.way)
+
+```
+
+The F-stat of 213.7 and pvalue of nearly 0 indicates there is a significant difference in the group means (regional prices). This is not unexpected as we do know there are large home price differences regionally. The intercept is the mean for the Central region.
+
+<b>Run one-way ANOVA tests for all metro areas against home price.</b>
+
+```{r}
+one.way<-aov(prices2$price ~ prices2$Metropolitan.Area)
+summary(one.way)
+```
+
+The F-stat of 85.7 and pvalue of nearly 0 indicates there is a significant difference in the group means (metropolitan area), but this is much smaller than for region. This is not unexpected as we do know there are price differences within different metropolitan groupings. 
+
+<b>Run one-way ANOVA tests for all states against home price.</b>
+
+```{r}
+one.way<-aov(prices2$price ~ prices2$State.s.)
+summary(one.way)
+```
+
+The F-stat of 48.22 and pvalue of nearly 0 indicates there is a significant difference in the group means (state) but this is much smaller than for region and metropolitan areas. This is not unexpected as we do know there are price differences within different states. 
+
+<b>Run one-way ANOVA tests for all years against home price.</b>
+
+```{r}
+one.way<-aov(prices2$price ~ prices2$year)
+summary(one.way)
+```
+
+The F-stat is 3.696 and pvalue is nearly 0. This small F-stat suggests that year is much less significant in influencing home prices, however we do know that home prices do generally trend up over time, but in this sample (2004-2012), there were unusually events such as the housing crisis which impacted this.<br>
+Overall, we would say that Region, State and Metro Area are the highest influences on housing prices.
+
+#### Student’s T Test)
+Lets use the t-test to establish that home prices in San Diego-Carlsbad-San Marcos are different from home prices in San Jose-Sunnyvale-Santa Clara.
+
+Null hypothesis: Home prices are the same between 'San Diego-Carlsbad-San Marcos, CA' and 'San Jose-Sunnyvale-Santa Clara, CA'. 
+Alternate hypothesis: Home prices are different between 'San Diego-Carlsbad-San Marcos, CA' and 'San Jose-Sunnyvale-Santa Clara, CA'
+
+
+```{r  comment=NA}
+
+#sj = ca[ca['met'] == 'San Jose-Sunnyvale-Santa Clara, CA']['price']
+
+sd <- subset(prices2, prices2$Metropolitan.Area == 'San Diego-Carlsbad-San Marcos, CA')
+sd <- sd[,-c(1,2,3,4)]  # only want prices
+
+sj <- subset(prices2, prices2$Metropolitan.Area == 'San Jose-Sunnyvale-Santa Clara, CA')
+sj<- sj[,-c(1,2,3,4)]  # only want prices
+
+ttest <- t.test(sd, sj)
+#names(ttest)
+print (ttest)
+
+
+```
+
+There is a statistically significant difference between home prices between 'San Diego-Carlsbad-San Marcos,CA' and 'San Jose-Sunnyvale-Santa Clara, CA. The t statistic is -4.0884 with a very low pvalue .
+So we can reject the null hypothesis that home prices are the same between the two cities and accept the alternate hypothesis.
+
+### Conclusion
+
+This anlaysis compared regional, state and city housing trends from 2004 to 2012. In doing so I had to overcome several issues. First there were data issues including many (NAN) values in price as well as leading/or trailing spaces in the Metropolitan Area names. The first step was to perform data cleansing, including removing leading/trailing spaces in string fields. Missing values were either replaced with 0's or removed entirely depending on the analysis conducted. Furthermore, the data file had housing data separated by years as columns. While this structure was fine for doing trend analysis by year, it was not conducisive for general analysis across all years. For the Anonva/t-tests, I chose to transform the data into a different dataframe with all years included as a single column.(See following print out).
+
+The anlysis affirmed housing trends which we intuitively know to be true; namely there are regional pricing differences with the West and Northeast having significantly higher home prices than Southeast and Central. Central was the lowest. Within the same geographical region, there are also price fluctions, for example by city. This analys compared CA home prices between the SF bay area vs. San Diego and it was found that home prices in the bay area is higher. Lastly, the analysis showed historical housing trends, that is housing prices tend to trend up overtime, and increased sharply after 2004 but decreased sharply in 2009, which is attributed to the subprime lending crisis, leading to the great recession of 2008.
+
+

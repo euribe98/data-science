@@ -1,0 +1,875 @@
+---
+title: "Factors Influencing Income Inequality"
+author: "Evan Uribe"
+date: "August 4, 2019"
+output:
+  html_document:
+    code_folding: hide
+    theme: united
+    toc: no
+  pdf_document:
+    toc: no
+  word_document:
+    toc: no
+fontsize: 11pt
+---
+
+### Project Scope
+Examine factors contributing to income disparity, including: race, gender, age, educational attainment, geography, etc.<br>
+
+<b>Data Collection:</b> The data was gathered from IPUMS USA, an organization that collects and
+preserves U.S. census microdata. This dataset was from the 2017 census and
+covers data from 2016. The final sample size includes 9710 rows and 16 variables after data
+cleansing.
+
+<b>Analysis Methods:</b>
+Descriptive Statistics, Hypothesis testing: t-test, chi-square test, ANOVA, Multiple Linear and Logistic Regression.
+
+```{r function_defs, comment=NA}
+rm(list = ls())
+par(mfrow=c(1,1)) 
+options(width = 100)
+
+suppressPackageStartupMessages(library(ggplot2))
+
+dataFile = "data/salary.csv"
+
+# function for relative variability (coefficient of variation)
+CV <- function(mean, sd){ (sd/mean)*100 }
+
+# function to return correlated variables
+showCorrelations <- function (corr, val) {
+   for (i in 1:nrow(corr)){
+     correlations <-  which((corr[i,] > val) & (corr[i,] != 1))
+  
+     if(length(correlations)> 0){
+       print(colnames(facebook)[i])
+       print(correlations)
+    }
+  }
+}
+
+# mean, median, standard deviation, coefficient of variation
+showStats <- function (df) {
+   .amean <- round(mean(df), 4)
+   .med <- round(median (df), 4) 
+   .std <- round(sd(df), 4) 
+   .cov <- round(CV (mean = .amean, sd=.std), 4)
+   .iqr <- IQR(df)
+   
+   s <- summary(df); 
+   .min <- s["Min."]; .q1 <- s["1st Qu."]; .median <- s["Median"]; .mean <- s["Mean"]
+   .q3 <- s["3rd Qu."]; .max <- s["Max."]
+
+   col.names = c("Min", "1st Qu", "Median", "Mean", "3rd Qu", "Max", "COV", "std", "IQR")
+   col.values = c(.min, .q1, .med, .amean, .q3, .max, .cov, .std, .iqr )
+   
+   stats <- matrix(col.values, nrow=1, ncol=9, byrow = TRUE, dimnames = list(c(""), col.names))
+   stats
+}
+
+
+# sort factors in decreasing order
+reorder_levels <- function(x) {
+        factor(x, levels = names(sort(table(x), decreasing = TRUE)))
+}
+
+# histogram of population counts
+countHist <- function(xval, xtitle='', ytitle='', maintitle='') {
+  p = ggplot(salaries, aes(fill = xval, x = reorder_levels(xval))) +
+        geom_bar(size=.5, show.legend=FALSE) +
+        geom_text(stat='count', aes(label=..count..), vjust=-1, size=3)+ #count labels
+        xlab(xtitle)  +
+        ylab(xtitle)  +
+        ggtitle(maintitle)+
+        theme(axis.text.x = element_text(angle = 45, hjust=0.5),
+              plot.title = element_text(hjust = 0.5, size=10, face="bold"))  # center 
+  return (p)
+}
+
+
+# facetted histogram with counts
+histFacet <- function(formulaVal, xval, xtitle='', ytitle='', maintitle='') {
+  ggplot(salaries, aes(fill = xval, x = reorder_levels(xval))) +
+        geom_bar(size=.5, show.legend=FALSE) +
+        xlab(xtitle)  +
+        ylab(ytitle)  +
+        ggtitle(maintitle) +
+        geom_text(stat='count', aes(label=..count..), vjust=-1, size=3)+ #count labels
+        facet_grid(formulaVal) +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+               plot.title = element_text(hjust = 0.5, size=10, face="bold"))  # center 
+}
+
+# facetted histogram with proportions
+propHistFacet <- function(formulaVal,xval, xtitle='', ytitle='', maintitle=''){
+  ggplot(salaries, aes(fill = xval, x = reorder_levels(xval))) +
+        geom_bar(show.legend=FALSE, size=.5, 
+        aes(y = (..count..)/sum(..count..))) +
+        ylab(ytitle)  +
+        xlab(xtitle) +
+        ggtitle(maintitle) +
+        scale_y_continuous(labels = scales::percent, name = " ") +
+        facet_grid(formulaVal) +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+               plot.title = element_text(hjust = 0.5, size=10,face="bold"))  # center )
+}
+
+ # basic boxplot using ggplot
+boxPlot <- function(df, xval, yval, xtitle='', ytitle='', maintitle = '') {
+  p = qplot(data = df, x = xval, y = yval, 
+      geom = "boxplot", 
+      xlab = xtitle, ylab =ytitle, main = maintitle,
+      fill= xval) +
+     theme(legend.position = "none",  # no legend
+      plot.title = element_text(hjust = 0.5, face="bold")) # center
+  return (p)
+}
+
+
+```
+### Data Preparation
+
+A significant part of this project involved prepping the dataset for analysis.  This involved removing bad/missing data, creating factors and other transformations. For example: race & ethnicity/hispanic were merged into a single RACE factor. Education and Age were grouped into segments.
+
+##### Data load
+
+```{r data_load, comment=NA }
+
+salariesOrg <- read.csv(dataFile)
+
+sprintf('dataset has %s rows and %s columns', nrow(salariesOrg), ncol(salariesOrg))
+
+# remove rows with missing values
+salariesOrg = salariesOrg[salariesOrg$INCWAGE != 0, ]
+salariesOrg = salariesOrg[salariesOrg$EDUCD != 999, ]
+salariesOrg = salariesOrg[salariesOrg$POVPIP != 'BBB', ]
+salariesOrg = salariesOrg[salariesOrg$AGE >=18, ] # only adults
+
+# drop unused columns
+suppressPackageStartupMessages(library(dplyr))
+salariesOrg = select (salariesOrg, -c(RACED, HISPAND, POWSP, PINCP, INDP))
+
+# poverty, convert from character to number
+salariesOrg$POVPIP <- as.numeric(salariesOrg$POVPIP)
+
+# make a copy for additional transformations
+salaries <- data.frame(salariesOrg)
+attach(salaries, warn.conflicts=FALSE)
+
+sprintf('dataset now has %s rows and %s columns', nrow(salaries), ncol(salaries))
+
+```
+##### Data Wrangling 
+
+```{r data_transform, comment=NA }
+# transform numeric factors to meaningful string values
+
+# gender
+salaries <- transform(salaries, SEX = ifelse(SEX == 1, 'Male', 'Female'))
+salaries$SEX <- factor(salaries$SEX)
+#contrasts(salaries$SEX) # 2-level factor
+
+# race
+salaries <- transform(salaries, RACE = case_when(
+    (RACE == 1 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'White', 
+    (RACE == 2 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'Black', 
+    (RACE == 3 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'NativeAm', 
+    (RACE == 4 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'Asian', 
+    (RACE == 5 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'Asian',  # Japanese->Asian
+    (RACE == 6 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'Asian',  # other Asian->Asian
+    (RACE == 7 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'Other',  # other race->Other
+    (RACE == 8 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'Other',  # 2 major races->Other
+    (RACE == 9 & HISPAN!='Cuban' & HISPAN!='Mexican' & HISPAN!='PuertoRican') ~ 'Other',  # 2+ races->Other
+    TRUE   ~ as.character(RACE) 
+))
+salaries$RACE <- factor(salaries$RACE)
+
+# ethnicity, add to race
+# 0 (Not Hispanic), 1 (Mexican), 2 (Puerto Rican), 3 (Cuban), 4 (Other)
+salaries <- transform(salaries, HISPAN = case_when(
+    HISPAN == 0 ~ 'NonHisp', 
+    HISPAN == 1 ~ 'Mexican', 
+    HISPAN == 2 ~ 'PuertoRican', 
+    HISPAN == 3 ~ 'Cuban', 
+    HISPAN == 4 ~ 'Other', 
+    TRUE   ~ as.character(HISPAN) 
+))
+salaries$HISPAN <- factor(salaries$HISPAN )
+
+# region
+salaries <- transform(salaries, REGION = case_when(
+    REGION == 1 ~ 'Northeast', 
+    REGION == 2 ~ 'Midwest', 
+    REGION == 3 ~ 'South', 
+    REGION == 4 ~ 'West', 
+    TRUE   ~ as.character(HISPAN) 
+))
+salaries$REGION <- factor(salaries$REGION )
+
+# marital status
+salaries <- transform(salaries, MAR = case_when(
+    MAR == 1 ~ 'Married', 
+    MAR == 2 ~ 'Widowed', 
+    MAR == 3 ~ 'Divorced', 
+    MAR == 4 ~ 'Separated', 
+    MAR == 5 ~ 'Never Married',
+    TRUE   ~ as.character(MAR) 
+))
+salaries$MAR <- factor(salaries$MAR )
+
+# education
+salaries <- transform(salaries, EDUCD = case_when(
+    EDUCD <62  ~ '<HS',
+    EDUCD >= 62 & EDUCD <=64 ~ 'HS',
+    EDUCD >= 65 & EDUCD <=71  ~ 'Some', 
+    EDUCD >=80 & EDUCD <=90  ~ 'Assoc', 
+    EDUCD == 100 | EDUCD ==101  ~ 'BA', 
+    EDUCD >=110 & EDUCD <= 116  ~ 'Adv',
+    TRUE   ~ as.character(RACE) 
+))
+salaries$EDUCD <- factor(salaries$EDUCD)
+
+# age groupings
+salaries <- transform(salaries, AGE = case_when(
+    AGE >=16 & AGE <= 25   ~ '18-25',
+    AGE >=26 & AGE <= 40   ~ '26-40',
+    AGE >=41 & AGE <= 60   ~ '41-60',
+    AGE > 60 ~'>= 61',
+    TRUE   ~ as.character(RACE) 
+))
+salaries$AGE <- factor(salaries$AGE)
+salaries$AGE2 = salariesOrg[,'AGE']  #original numeric value 
+
+# poverty recode : 
+salaries <- transform(salaries, POVPIP = case_when(
+    (POVPIP < 150 | PAP > 0 )  ~ 1,
+    TRUE ~ as.numeric(as.character(0))
+))
+salaries$POVPIP <- factor(salaries$POVPIP)
+salaries$POVPIP2 <- salariesOrg[, 'POVPIP'] #original numeric value
+
+# heath coverage: 1= insured, 2 = not insured
+salaries$HICOV <- factor(salaries$HICOV )
+
+#race and ethnicity cross-tabs
+addmargins(with(salaries, table(salaries$RACE, salaries$HISPAN, dnn = c('race', 'ethnicity'))))
+
+```
+
+
+```{r  comment=NA }
+
+# add hispanic to race
+salaries <- transform(salaries, RACE = case_when(
+  (RACE=='White' & HISPAN=='Cuban') ~ 'Hisp',      #'Cuban',
+  (RACE=='Other' & HISPAN=='Cuban') ~ 'Hisp',      #'Cuban',
+  (RACE=='Asian' & HISPAN=='Cuban') ~ 'Hisp',      #'Cuban',
+  (RACE=='White' & HISPAN=='Mexican') ~ 'Hisp',    #'Mexican',
+  (RACE=='Other' & HISPAN=='Mexican')  ~ 'Hisp',   #'Mexican',
+  (RACE=='NativeAm' & HISPAN=='Mexican') ~ 'Hisp', #'Mexican',
+  (RACE=='Black' & HISPAN=='Mexican') ~ 'Hisp',    #'Mexican',
+  (RACE=='Asian' & HISPAN=='Mexican') ~ 'Hisp',    #'Mexican',
+  (RACE=='White' & HISPAN=='PuertoRican') ~ 'Hisp',   #'PuertoRican',
+  (RACE=='Other' & HISPAN=='PuertoRican') ~ 'Hisp',   #'PuertoRican',
+  (RACE=='Black' & HISPAN=='PuertoRican') ~ 'Hisp',   #'PuertoRican',
+  (RACE=='Asian' & HISPAN=='PuertoRican') ~ 'Hisp',   #'PuertoRican',
+  TRUE   ~ as.character(RACE) 
+))
+salaries$RACE <- factor(salaries$RACE)
+
+###  subsets of interest ###
+
+females =  subset(salaries, SEX=='Female')
+males =  subset(salaries, SEX=='Male')
+
+whiteRace = (salaries[, 'RACE'] == 'White')
+white = subset(salaries, RACE=='White')
+nonwhite = subset(salaries, !whiteRace)
+
+college = subset(salaries, EDUCD=='BA' | EDUCD=='Adv')
+some = subset(salaries, EDUCD=='Some' | EDUCD=='Assoc')
+none = subset(salaries, EDUCD=='<HS' | EDUCD=='HS')
+
+# income by gender
+incomeF = females$INCWAGE
+incomeM = males$INCWAGE
+incomeNoF = subset(females, EDUCD!='BA' & EDUCD!='Adv')$INCWAGE
+incomeNoM = subset(males, EDUCD!='BA' & EDUCD!='Adv')$INCWAGE
+incomeColF = subset(females, EDUCD=='BA' | EDUCD=='Adv')$INCWAGE
+incomeColM = subset(males, EDUCD=='BA' | EDUCD=='Adv')$INCWAGE
+
+#print(head(salaries, 3))
+
+#race and ethnicity cross-tabs
+addmargins(with(salaries, table(salaries$RACE, salaries$HISPAN, dnn = c('race', 'ethnicity'))))
+
+```
+
+Hispanic was not included in Race but Ethnicity which was not convenient for analysis by race. Therefore race and ethnicity were combined to create a new race value 'Hisp' whereby Cubans, Mexicans and PuertoRicans were grouped.
+
+### Descriptive Statistics
+
+##### General Demographics
+
+```{r comment=NA}
+suppressPackageStartupMessages(library(gridExtra))
+
+# population by region
+p1= countHist (xval=salaries$REGION, maintitle='Regional Makeup') 
+
+# by gender
+p2=countHist (xval=salaries$SEX, maintitle='Gender Makeup') 
+
+#  by race
+p3=countHist (xval=salaries$RACE, maintitle='Racial Makeup') 
+
+grid.arrange(p1, p2,p3, ncol=3, nrow = 1)
+
+# education, age
+p4=countHist (xval=salaries$EDUCD, maintitle='Education Makeup') 
+p5=countHist (xval=salaries$AGE, maintitle='Age Makeup') 
+
+grid.arrange(p4,p5, ncol=2, nrow = 1)
+
+# marital status by gender
+histFacet (formulaVal= ~ salaries$MAR, xval=salaries$SEX, xtitle='', ytitle='', maintitle='Marriage by Gender') 
+#t <- table(salaries$SEX, salaries$MAR)
+#ftable(addmargins(t))
+
+```
+
+- The sample population is concentrated in the South, followed by West, Midwest and Northeast.<br>
+- Males are more represented (~51%) as compared to Females (~49%).<br>
+- Whites make up the majority at (6931), followed by Hispancis, Blacks, Asians, and Other. Native Americans are less than 100 at (66). <br>
+- For educational attainment, the population is fairly educated with a majority having high school, bachelors or some college. (1420) have advanced degrees while (912) has associates degree. Only (772) have less than high school.<br>
+- The majority of the sample are aged (41-60), followed by (26-40), then 61 years and older. The least represented age group is (18-25).<br>
+- Most people in this sample are married.<br><br>
+
+### Education by Group
+
+
+```{r fig.width=8,fig.height=4, comment=NA}
+# education by race
+propHistFacet (~ salaries$RACE, salaries$EDUCD, xtitle='', ytitle='', maintitle='Education by Race')
+
+```
+
+Within the White group, education is right skewed with more whites having higher levels of education. For Hispanics, more have less than high school versus other racial groups. Within Blacks, the majority have HS or some college with less having earned a bachelor’s/advanced.  Within Asians, more have bachelors or advanced degrees.<br>
+
+To validate these observations, I conduct a chi-square test to test whether there is a statistically significant relationship between education and race.
+
+```{r fig.width=4,fig.height=3, comment=NA, message=FALSE}
+# categorical testing
+
+# 1-sample chi test
+# X-squared = 1419, df = 5, p-value <0.0000000000000002
+# indicates null hypothesis is rejected and there is a difference in edu levels
+# edu <- chisq.test(x = table(salaries$EDUCD))
+
+#2-sample chi test
+# t-test to see if education levels are different between races
+#t= table(salaries$EDUCD, salaries$RACE)
+chi = chisq.test(x =table(salaries$EDUCD, salaries$RACE))
+contrib <- 100*chi$residuals^2/chi$statistic
+print (chi)
+#round(contrib, 4)  # contributions table
+
+ # visualize Pearson residuals
+suppressPackageStartupMessages(library(corrplot))
+corrplot(chi$residuals, 
+         #mar=c(0,0,5,0), 
+         #number.cex=0.75, 
+         #title = 'Pearson Residuals plot',
+         is.cor = FALSE) 
+
+#corrplot(contrib, is.cor = FALSE) # Visualize the contribution
+
+#s <- subset(x = salaries, subset = EDUCD %in% c("BA", "Adv"), select=c(EDUCD, RACE, INCWAGE))
+#t = table (s$RACE, s$EDUCD)
+#chisq.test(x = t)
+```
+
+The test statistic of 795.56 and a small p-value validates rejection of the null hypothesis, so we conclude there is a significant association betwen race and education.<br> 
+
+From the Pearson Residuals plot we can see that Hispics are 'strongly' associated with less than high school with little association to BA/Advanced degress.  Asians have a positive association with BA/Adv degrees (i.e. many more have higher level of education and this is larger than any other group).  Blacks have a positive association with high school/some college and less to BA/Advance degrees. Within the White group, there is a negative association to less than high school (i.e. most complete high school) and moderate associations to degree attainment.
+
+```{r fig.width=6,fig.height=5, comment=NA}
+# educ by gender
+histFacet (formulaVal= ~ salaries$SEX, xval=salaries$EDUCD, xtitle='', ytitle='', maintitle='Education by Gender') 
+
+# sex, age and education
+#t <- table(salaries$SEX, salaries$AGE, salaries$EDUCD)
+#ftable(addmargins(t))
+```
+
+As a group, women earn bachelors/advanced degrees at higher rates than men and the results of the chi-square test bears this out (significant X-squared of 62.238 and small pvalue). From the graph we can see that women are highly associated with higher education versus men.
+
+```{r fig.width=5,fig.height=3, comment=NA}
+chi = chisq.test(x =table(salaries$SEX, salaries$EDUCD))
+contrib <- 100*chi$residuals^2/chi$statistic
+print (chi)
+
+ # visualize Pearson residuals
+corrplot(chi$residuals, is.cor = FALSE) 
+
+```
+
+### Income Analysis
+
+```{r fig.width=6,fig.height=5, comment=NA}
+par(mfrow=c(1, 1))
+options(scipen=999) # don't want scientific notation for plots
+
+h=hist(salaries$INCWAGE
+     ,main = " "
+     ,ylab = "Frequency"
+     ,xlab = "Income (2016)",
+     col = "lightblue",
+     labels = FALSE,
+     xlim=c(0,800000), ylim=c(0,8000), 
+     cex.lab=1, cex.axis=.75,
+     breaks=15)
+text(x=h$mids, y=h$counts, labels=h$counts,cex=.75,pos=3) # count labels
+
+options( scipen = 20, digits=4 )  # reenable it
+
+```
+
+From the histogram we can see income is right skewed with most income earned 100K or less. We also observe outliers at the far right with large incomes > than 450K. Income distribution is typically skewed right given very high incomes for relatively small segments of a population. Skewed data violates normality assumptions in regression models so income will need to be log transformed. 
+
+
+```{r fig.width=6,fig.height=5, comment=NA}
+
+showStats (df = salaries$INCWAGE) 
+
+```
+
+Income statistics reveals median income of ~36K while mean is ~52K, again an indication of positive skew. Moving on, lets explore income differences between different population groups.
+
+```{r fig.width=5,fig.height=4, comment=NA}
+#### Income by Gender
+
+qvals = seq(0.05,0.95, by=0.05) # quantiles for the given probabilities
+#qvals = seq(0, 1, by=0.05) 
+
+# Get income quantiles
+finc = quantile(incomeF, probs=qvals)        # all females
+fincEd = quantile(incomeColF, probs=qvals)   # college females
+fincomeNo = quantile(incomeNoF, probs=qvals) # < college
+
+minc = quantile(incomeM , probs=qvals)       # male income
+mincEd = quantile(incomeColM, probs=qvals)   # colleged males
+mincomeNo = quantile(incomeNoM, probs=qvals) # < college
+
+# Find range of values
+yrange = range(c(minc, finc))
+
+# Using quantiles is a way to normalize the characteristics of a population between 0 and 1 
+# which facilitates comparisons between 2 populations while ignoring scale problems.
+# High: last decile (q0.90), Middle: q0.90 − q0.95, Upper middle: q0.95 − q0.99 
+# really rich last centile (>= q0.99)
+
+plotIncomes <- function(fIncome, fc, mIncome, mc, mtitle) {
+  plot(y=qvals, x=fIncome,   
+     type="b",  # both points and lines
+     pch=8,     # plotting character 
+     col=fc, 
+     xlim=yrange, ylab="Cumulative Proportion", xlab="Income (2016)", 
+     main= paste('CDF Plot\n',mtitle))
+  lines(y=qvals, mIncome, pch=18, col=mc, type="b", lty=2) # male
+}
+
+par(mfrow=c(1, 1))
+
+# female vs male, general
+plotIncomes (fIncome =finc, fc='red', mIncome=minc, mc='blue', 
+             mtitle='Income (Females vs Males, General Population)')
+legend(x="bottomright", y=95, 
+       legend=c('F', 'M'), 
+       col= c('red', 'blue'), 
+       pch = c(8, 18),
+       lty=1:2, cex=0.8)
+
+# with and w/o college 
+plotIncomes (fIncome=fincEd, fc='hotpink', mIncome=mincEd, mc='darkblue',
+             mtitle='Income (Females vs. Males ~ Education)')
+lines(y=qvals, fincomeNo, pch=8, col="orange", type="b", lty=2)  # females none
+lines(y=qvals, mincomeNo, pch=18, col="purple", type="b", lty=2)  # males none
+lines(y=qvals, minc, col="darkgreen", type="b", lty=2) # all men
+
+legend(x="bottomright", y=95, 
+       legend=c("F (BS+)", "M (BS+)", "F (<BS)", "M (<BS)", "M (All)"), 
+       col=c("hotpink","darkblue", "orange", "purple", "darkgreen"), 
+       pch = c(8, 18, 8, 18, 1),
+       lty=1:2, cex=0.8)
+```
+
+Women on the whole, earn less than men as observed in the cumulative distribution plots. For example (top graph)  ~80% of men make less than 100K, but a higher % of women make less than 100K.  Even in the college group, women earn less than their male counter parts (bottom graph). Though college women earn more than non-college males, they are nearly on par with the general population of men (green and pink plots).<br>
+
+In the cross tab table, we see that women earn higher levels of educaton than men, but does that translate to equal pay? <br>
+To find out, a t-test is is run to see if earnings for college educated women, age (26-60) is different relative to their male counterparts.
+
+```{r comment=NA}
+
+# t-test for college aged (26 -60) 
+sal = salaries[salaries$AGE %in% c("26-40", "41-60"),] 
+sal = sal[sal$EDUCD %in% c('Adv', 'BA'),] 
+
+addmargins(with(sal, table(sal$SEX, sal$EDUCD)))
+
+fi = sal[sal$SEX == 'Female',]  
+mi = sal[sal$SEX == 'Male',] 
+
+# normality testing
+#library("car")
+# qqPlot(fi$INCWAGE)
+# p-value > 0.05 implies the distribution are not significantly different from normal dist (i.e normal distribtion)
+#shapiro.test(fi$INCWAGE)
+
+#ttest <- t.test(fi$INCWAGE, mi$INCWAGE)
+print(t.test(mi$INCWAGE, fi$INCWAGE))
+
+#college women vs all men
+ttest= t.test(fi$INCWAGE, incomeM)
+
+print('Comparison: college Women vs. all Men')
+#writeLines(paste(ttest$method, "   t: ", ttest$statistic, " pvalue: ", ttest$"p.value"))
+print (ttest)
+
+```
+
+There is a statistically significant difference between income between the two groups. The t statistic is 13 with a very low pvalue. See the striking differences between the mean of men vs women. So we reject the null hypothesis (no difference in mean incomes)and accept the alternate hypothesis.<br> 
+
+I also wanted to see the difference between college women vs. the general malke population. The 2nd t-test shows a difference with but with a much smaller t value of just 1.7.  This validates what we see in the data, that even accounting for education, women still earn less than comparably educated males. This is likely due to the the fact that women generally work in occupations that pay less with fewer women in top exective positions.
+
+```{r fig.width=5,fig.height=4, comment=NA}
+#### income by race
+par(mfrow=c(1, 1))
+
+boxPlot (df=salaries, xval=salaries$RACE, yval= salaries$INCWAGE, 
+         xtitle='', ytitle=' ', maintitle = 'Incomes by Race')
+```
+
+Income differencees aren't so wide among non-White, non-Asian groups. Asians are actually the highest earning, slightly surpassing whites. This may be due in part by higher levels of education attainment among Asians, generally. <br>
+
+To further analyze income differences between race, a one-way ANOVA test was conducted. The results find an F-stat of 38 and near 0 pvalue, indicatiing there is a significant difference in the group means of income amoung racial groups.<br>
+However we don't know which group means are different. For this  the (Tukey Honest Significant Differences) is used for multiple pairwise-comparison between the means of groups.
+
+```{r fig.width=5,fig.height=4, comment=NA}
+
+#one-way ANOVA for all races against income
+# lm vs aov. not equivalent?
+# aov does sequential sum of squares (Type I); lm does adjusted sum of squares (Type II).
+
+fit <- aov(salaries$INCWAGE ~ salaries$RACE)
+summary(fit)
+
+# Perform multiple pairwise-comparison, to determine if the mean difference between specific
+# pairs of group are statistically significant.
+print(TukeyHSD(fit))
+
+```
+
+We see that the difference in means is not significant between Hipanic and Black, not too surprising given our understanding of pay disparity.  Nor is it significant between Native American and Other race categories, but this might be explained by the relatively small sample size for NativeAm and Other, 66 and 269 respectively.  
+
+I then was wondering if the incomes of College, Asian males, age (26-60) differ from College, White males, so a t-test was conducted.
+
+In the table below, we see that the population of Asians with college, age (26-60) is much smaller than that of a comparable population due to the relatively small Asian sample.
+
+```{r comment=NA}
+#### colleged educated asians vs colleged educated whites
+sal = salaries[salaries$AGE %in% c("26-40", "41-60"),] 
+sal = sal[sal$EDUCD %in% c('Adv', 'BA'),] 
+sal = sal[sal$RACE %in% c('Asian', 'White'),] 
+
+table(sal$RACE)
+addmargins(with(sal, table(sal$RACE, sal$EDUCD)))
+
+asianm = sal[sal$RACE == 'Asian' & sal$SEX == 'Male',] 
+whitem = sal[sal$RACE == 'White' & sal$SEX == 'Male',] 
+print(t.test(asianm$INCWAGE, whitem$INCWAGE))
+
+```
+
+The t-test results are not signficant and we see the means are not substantially different, 107667 vs 106907 between Asian and White men, respectively.  While we can't reject the null hypothesis, the sample size for Asians in this group is quite small compared to Whites.  Let's run another t-test that compares all Asians as a group relative to all Whites as a group. 
+
+```{r comment=NA}
+#### all asians vs all educated whites
+sal = salaries[salaries$RACE %in% c('Asian', 'White'),] 
+#table(sal$RACE)
+
+asian = sal[sal$RACE == 'Asian',] 
+white = sal[sal$RACE == 'White',] 
+print(t.test(asian$INCWAGE, white$INCWAGE))
+
+```
+
+This time the t statistic is 3.4 with a significant pvalue, so we can say that mean income is different between Asians versus Whites, thus confirming the results in the data that Asian's earn more as a group than all other groups, but only slightly different from Whites.
+
+
+```{r fig.width=5,fig.height=4, comment=NA}
+#### income by marital status
+par(mfrow=c(1, 1))
+
+boxPlot (df=salaries, xval=salaries$MAR, yval= salaries$INCWAGE, 
+         xtitle='', ytitle=' ', maintitle = 'Incomes by Marital Status')
+```
+
+In looking at incomes by marital status, it seems being married now or or previously (divorced, widowed) results in higher income. Married persons have the highest incomes relative to the other groups. This intuitvely makes sense given multiple workers in the family. To find out about the statisical significance, an ANOVA test is conducted.
+
+```{r comment=NA}
+#table(salaries$MAR)
+
+fit <- aov(salaries$INCWAGE ~ salaries$MAR) 
+print(summary(fit))
+print(fit$coefficients)
+
+```
+
+The findings of ANOVA reveal a high F value of 116 and a very significant pvalue, indicating there is a statistically signficant difference in mean incomes by marital status.<br> 
+
+Looking at the coefficients, with Divorced (48904) as the intercept.<br> 
+The regression equation: <b>INC = 48904 + 13496(Married) -16207(Never Married) -11510 (Separated) + 4466 (Widowed)</b>. Relative to Divorced, Married earns (13496) more; Never Married earns (16207) less; Separated earns (11510) less; Widowed earns (4466) more.  
+
+
+```{r fig.width=5,fig.height=4, comment=NA}
+#### income by region
+boxPlot (df=salaries, xval=salaries$REGION, yval= salaries$INCWAGE, 
+         xtitle='', ytitle=' ', maintitle = 'Incomes by Region')
+```
+
+Mean incomes across all regions are not that different, but the higher incomes look to be more concentrated in the Northeast and West.  Intuitively this makes given that higher paying jobs are more concentrated in these areas.<br>
+
+To find out the statistical signficance of regional income differences, an ANOVA test was conducted.
+
+```{r comment=NA}
+#table(salaries$REGION)
+
+# f = lm (salaries$INCWAGE ~ salaries$REGION)
+# Anova(f)
+# s = summary(f)
+# same results as below but summary has more detail, R2, etc..
+
+fit <- aov(salaries$INCWAGE ~ salaries$REGION) 
+print(summary(fit))
+print(fit$coefficients)
+
+```
+
+The findings of ANOVA reveal an F value of 7.03 and a significant pvalue, indicating there is a statistically signficance difference in mean income by region. Looking at the coefficients, the mean in the MidWest (Intercept) is (48775).<br>  
+The regression equation: <b>INC = 48775 + 8606(NE) + 1864(S) + 3850(W)</b> indicates the Midwest has the lowest income at 48775. Relative to the MW, Northeast has earnings 8606 more; South has 1864; West has 3850 more.  This confirms what we see visually with Northeast followed by West having the highest median earnings.
+
+
+```{r comment=NA, message=FALSE}
+####  income given age
+
+p1= boxPlot (df=salaries, xval=salaries$AGE, yval= salaries$INCWAGE, 
+         xtitle='', ytitle=' ', maintitle = 'Incomes by Age') 
+
+# scatter plot
+p2 = ggplot(salariesOrg, 
+        aes(x=jitter(as.numeric(salariesOrg$AGE)), y=salariesOrg$INCWAGE, 
+        color=salaries$AGE)) + 
+        labs(title="Income by Age", x ="", y = "")+
+        geom_point(show.legend=FALSE) +   # scatter
+        #regression line
+        #https://stackoverflow.com/questions/30208670/r-stat-smooth-groups-x-axis
+        theme(plot.title = element_text(hjust = 0.5, face="bold")) +
+        geom_smooth(color='red') # Loess method
+
+grid.arrange(p1,p2, ncol=2, nrow = 1)
+
+```
+
+Looking at income by age, we see income generally increases with age during employment years but gradually decreases ~ 60.  The highest income occurs during age 41-60, likely corresponding to established careers during prime working years.
+
+To find out the statistical signficance of Age income differences, an ANOVA test was conducted.
+
+```{r comment=NA}
+#table(salaries$AGE)
+
+fit <- aov(salaries$INCWAGE ~ salaries$AGE) 
+print(summary(fit))
+print(fit$coefficients)
+
+```
+
+The findings of ANOVA reveal a very large F value of 199 and a very significant pvalue, indicating there is a statistically signficance difference in mean income levels by age.<br> 
+Looking at the coefficients, the intercept of (50115) corresponds to persons over 60. Using this group as a point of reference, we see the (18-25) group earns less by (31957). (26-40) earn less by (1628) and (41-60) earn more by (14735). This is in alignment with what we see visually.
+
+
+### Regression Models
+
+#### Linear Regression
+
+Next, multiple regression models are analyzed to assess the influence of the variables
+studied during Descriptive Statistics on income. (Note that I took the log of income due to high positive skew. As monetary amounts usually have a log-normal distributiong, taking the log restores symmetry).
+
+
+##### Model1: log(INCWAGE) ~ AGE + SEX + RACE
+
+```{r comment=NA}
+
+model1 = lm(log(INCWAGE) ~ AGE + SEX + RACE, data = salaries)
+summary (model1)
+```
+
+The F-statistic with its very low pvalue is highly significant. All the predictor variables (Age, Sex and Race) also have significant t-statistic values, though NativeAm is marginal.  The Adjusted R-squared (0.17) indicates that about 17% of Income is explained by this model. 
+
+
+##### Model2: log(INCWAGE) ~ AGE + SEX + RACE + EDUCD
+
+Additon of (Education)
+
+```{r comment=NA}
+# sames as model1
+#model2 = glm(log10(INCWAGE) ~ AGE + SEX + MAR + REGION + RACE, data = salaries, family=gaussian)
+model2 = lm(log(INCWAGE) ~ AGE + SEX + RACE + EDUCD, data = salaries)
+summary (model2)
+```
+
+With the addition of (Education), the F-statistic is still highly significant. Age and Sex continue to be significant, but Race is much less so with only Black being significant, but less than before. However Education is very signficant. The Adjusted R-squared (0.261) increased, indicating that about 26% of Income is explained by this model. 
+
+
+##### Model3:  log(INCWAGE) ~ AGE + SEX + RACE + EDUCD + MAR
+
+Addition of (Marriage)
+
+```{r comment=NA}
+model3 = lm(log(INCWAGE) ~ AGE + SEX + RACE + EDUCD + MAR, data = salaries)
+summary (model3)
+```
+
+With the additon of (Marriage), Age, Sex, Education continue to be significant. Race continues not to be very significant. For Marriage, only Married and Never-married is signficant. The F-statistic is still highly significant, while the Adjusted R-squared (0.27), did not change much from the previous model (0.261).   
+
+
+##### Model4: log(INCWAGE) ~ AGE + SEX + RACE + EDUCD + MAR + REGION
+
+Addition of Region
+
+```{r comment=NA}
+model4 = lm(log(INCWAGE) ~ AGE + SEX + RACE + EDUCD + MAR + REGION, data = salaries)
+summary (model4)
+```
+
+With the addition of (Region), Age, Sex, Education continue to be significant, but Race is no longer significant. For marriage, only Married and Never-married are significant. For region, only Northeast and West are significant. The F-statistic is still highly significant and the Adjusted R-squared (0.271) is about the same as the last model (0.27).
+
+At this point, it appears that Age, Sex and Educaton have the strongest effect on on income. The addition of Education, reduced the effect of Race, which makes sense given that we know that education has a leveling power. Married and Never-married; Northeast and West also show a strong effect.  
+
+Next compare the 4 models' fit using anova f-test.
+
+##### Model comparisons
+```{r comment=NA}
+
+anova(model1, model2, model3, model4)
+
+```
+
+From these results, it appears that Model2 (AGE + SEX + RACE + EDUCD) and Model3 (AGE + SEX + RACE + EDUCD + MAR) are the best fit.  Comparing just these two, the anova f-test shows that Model3 is the better choice.
+
+```{r comment=NA}
+anova(model2, model3)
+```
+
+And yet when we look at the coefficeints for RACE in Model3, they are not very significant with only Black being marginally significant, so let's create another model that eliminates RACE and compare it.
+
+```{r comment=NA}
+summary(model3)$coefficient
+
+```
+
+##### Model5: log(INCWAGE) ~ AGE + SEX + EDUCD + MAR
+```{r comment=NA}
+model5 = lm(log(INCWAGE) ~ AGE + SEX + EDUCD + MAR, data = salaries)
+summary (model5)
+
+anova(model3, model5)
+```
+
+
+```{r comment=NA}
+# these are equivalent?
+model1 = lm(log(INCWAGE) ~ AGE + SEX + RACE, data = salaries)
+model2 = glm(log(INCWAGE) ~ AGE + SEX + RACE, data = salaries, family=gaussian)
+anova(model1, model2, model3)
+```
+
+Everyting looks significant but the Adjusted R-squared: (0.27) is the same as Model3 which is supported by the anova results, indicating ~27% of Income levels is explained by this model.  However, given that Model5 is a simpler model, it is the best model.
+
+
+
+#### Logistic regression
+
+Predict the probability of poverty based on age, sex, education, and health coverage. 
+
+For this analysis, I've defined Poverty as:<b>(POVPIP < 150 | PAP > 0 )</b> where POVIP is 3-digit numeric code expressing a total income as a percentage of the poverty thresholds established by the SSA. PAP is the amount of public assistance received.
+
+```{r  comment=NA}
+poverty <- glm(POVPIP ~ AGE2 + SEX + EDUCD + HICOV + RACE,
+                 data=salaries, family="binomial",
+                 )
+#coefficients in regression explain how much a variables contribute to the log odds of the response
+#  transforming the log-odds to odds for easier interpretation
+poverty.tab <-  coef(summary(poverty))
+poverty.tab[, "Estimate"] <- exp(coef(poverty))
+poverty.tab
+```
+
+Most of the coefficient p-values are are statistically significant in determining poverty with the exception of some of the race groups; only Other is very significant while Blacks and Hispanics are marginally significant.  NativeAmericans (likely due to small sample size) and Whites are not signifant at all. Overall the results suggest the model is a good fit in predicting poverty.
+
+- AGE2:      With increased age, the odds of poverty <b>'decreases'</b> by 0.9767.  
+- SEXMale:   Males have <b>'decreased'</b> odds of poverty of 0.7711.  
+- EDUCDAdv:  Advance degrees relative to less than HS <b>'decreases'</b> the odd of poverty by 0.1514.
+- EDUCDAssoc: Assoc degrees relative to less than HS <b>'decreases'</b> the odds of poverty by 0.5410  
+- EDUCDBA:   Bachelors degree relative to less than HS <b>'decreases'</b> the odds of poverty by 0.2450    
+- EDUCDHS:   HS diplomas relatve to less than HS <b>'decreases'</b> the odds of poverty by 0.6127 
+- EDUCDSome: Some college relative to less than HS <b>'decreases'</b> the odds of poverty 0.5242     
+- HICOV2:    Not having health coverage <b>'increases'</b> the odds of poverty by  2.0674 
+- RACEBlack: Relative to Asians, Blacks have an <b>'increased'</b> odds of poverty of 1.4486 
+- RACEHisp:  Relative to Asians, Hispancis have an <b>'increased'</b> odds of poverty of 1.3230     
+- RACENativeAm:  Relative to Asians, NativeAm have an <b>'increased'</b> odds of poverty of 1.2030    
+- RACEOther: Relative to Asians, Others races have an <b>'increased'</b> odds of poverty of 2.0581    
+- RACEWhite: Relative to Asians, Whites relative have a <b>'descreased'</b> odds of poverty of 0.9762   
+
+Increased Age reduces likelihood of poverty. Women have a higher likelihood of poverty than men. Lack of health coverage increases likelihood of poverty. Increased education reduces the likeihood of poverty, especially high school graduates and some college. Whites are the least likely racial group to experience poverty with Others the most likely.  
+
+
+The following plots visually shows the effects of these factors on poverty. (Note: the poverty scale is in log odds vs. odds given the plotting library).
+
+```{r fig.width=5,fig.height=3, comment=NA}
+suppressPackageStartupMessages(library(effects))
+
+plotEffect <- function(ef, mtitle='', ytitle='', xtitle='', cName) {
+ plot(ef, cName,  
+     main = mtitle, xlab = ytitle, ylab = xtitle)
+}
+
+eff = allEffects(poverty)
+#summary(eff)
+#plot(eff)  # too squished
+
+plotEffect(eff,cName= 'AGE2', mtitle = 'AGE2 effect plot', xtitle = 'Poverty', ytitle = 'Age')
+plotEffect(eff,cName='SEX', mtitle = 'SEX effect plot', xtitle = 'Poverty', ytitle = 'Gender')
+plotEffect(eff, cName='EDUCD',mtitle = 'EDUCD effect plot', xtitle = 'Poverty', ytitle = 'Education')
+plotEffect(eff, cName='HICOV', mtitle = 'HICOV effect plot', xtitle = 'Poverty', ytitle = 'Health Coverage')
+plotEffect(eff, cName='RACE', mtitle = 'RACE effect plot', xtitle = 'Poverty', ytitle = 'Race')
+
+```
+
+
+
+### Conclusion
+
+It appears that Age, Sex, Maritial Status and Education are statistically signifigant in determining Income Levels. Race is a factor but less of an influence when Education is included from the model. Age, Gender and Education have the strongest affects.  
+
+In terms of predictors for poverty, Age, Gender, Health Coverage and Race are statistically signfifant, though Race much less so given the inclusion of Education.  Age, College attainment and Health coverage are the strongest predictors.
+
+Looking ahead, I would like to review the influence of Occupation and Industry on income levels. I'm would assume both have a large effect given that much of income disparity income relates to occupation; women, even those with higher levels of education, tend to work more in lower paying occupations such as nonprofit, teaching, etc.. and are underrepresented in top management/executive positions.
+
+
+
+
+
+
+

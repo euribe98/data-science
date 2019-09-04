@@ -1,0 +1,166 @@
+﻿,Median Selling Prices of Homes in U.S. Cities (n = 163 cities),,,Source: http://www.realtor.org,,,,,,,,"As of April, 2013"
+,,,,,,,,,,,,
+,Metropolitan Area,State(s),Region,2004,2005,2006,2007,2008,2009,2010,2011,2012 p
+1,"Abilene, TX",TX,Southeast,,,,,,,112.8,119.2,124.6
+2,"Akron, OH ",OH,Central,116.9,120.5,114.6,119.3,100.5,93.2,108.9,90.9,109.5
+3,"Albany-Schenectady-Troy, NY",NY,Northeast,161.3,183.5,195.4,198.9,197.9,189.1,195.7,193.8,200.3
+4,"Albuquerque, NM",NM,West,145.4,169.2,184.2,198.5,192.6,180.6,178.7,167.9,170.3
+5,"Allentown-Bethlehem-Easton, PA-NJ ",PA-NJ,Northeast,207.3,243.4,248.1,260.8,243.6,223.4,224,185.4,189.6
+6,"Amarillo, TX",TX,Southeast,97.1,107.1,114.9,118.4,124.7,123.8,124.7,128.2,133.8
+7,"Anaheim-Santa Ana, CA  (Orange Co.)",CA,West,627.3,691.9,709,709.5,533.2,477.2,544.7,512.5,542.7
+8,"Appleton, WI",WI,Central,122.9,129.6,129.2,130,127.4,115.6,119,115.7,114.2
+9,"Atlanta-Sandy Springs-Marietta, GA ",GA,Southeast,156.9,167.2,171.8,172,149.5,123.5,114.8,98.6,101.4
+10,"Atlantic City, NJ",NJ,Northeast,197.9,256.1,254.8,269.7,253.3,221.3,226.4,223.2,220.4
+11,"Austin-Round Rock, TX ",TX,Southeast,154.7,163.8,173.7,183.7,188.6,187.4,193.6,193.1,206
+12,"Baltimore-Towson, MD",MD,Northeast,217,265.3,279.9,286.1,274.1,251.2,246.1,230,206
+13,"Barnstable Town, MA",MA,Northeast,377.2,398.3,389.5,384.7,341.9,321,326,311.5,320.5
+14,"Baton Rouge, LA",LA,Southeast,127.7,146.2,169.5,174.4,165,163,169.6,163.4,164.3
+15,"Beaumont-Port Arthur, TX ",TX,Southeast,93.5,98.5,112.7,123,127.4,132.4,125.1,124.2,127.8
+16,"Binghamton, NY ",NY,Northeast,85.3,94.4,96.9,111.2,113.7,115.7,110.3,113.8,109.5
+17,"Birmingham-Hoover, AL ",AL,Southeast,146.6,157,165.1,161.3,153.9,146.1,143,139.8,151.1
+18,"Bismarck, ND",ND,Central,113.8,124.9,134.9,152.9,155.2,156.6,163.4,166.9,193
+19,"Bloomington-Normal, IL ",IL,Central,147.8,159.2,152.2,154,159.8,152.8,157.9,155.1,156.4
+20,"Boise City-Nampa, ID",ID,West,,,,,188.7,153.8,136.2,115.4,138.7
+21,"Boston-Cambridge-Quincy, MA-NH",MA-NH,Northeast,389.7,413.2,402.2,395.6,361.1,332.6,357.3,346.2,351.2
+22,"Boulder, CO ",CO,West,325.3,348.4,366.4,376.2,359.6,345.5,358.1,353.1,383.7
+23,"Bridgeport-Stamford-Norwalk, CT ",CT,Northeast,441.3,482.4,473.7,486.6,437.9,379.2,408.6,390.6,353.8
+24,"Buffalo-Niagara Falls, NY ",NY,Northeast,95,99,97.9,104,105.4,113.6,121.2,119.2,126.9
+25,"Burlington-South Burlington, VT",VT,Northeast,,,,,248.8,241.8,261.2,272,270.6
+26,"Canton-Massillon, OH ",OH,Central,115.2,102.2,109.3,110.3,92.5,86.2,90.9,,
+27,"Cape Coral-Fort Myers, FL",FL,Southeast,187.2,269.2,268.2,252.1,152.6,87.6,88.9,102.9,128.1
+28,"Cedar Rapids, IA",IA,Central,129.5,131.8,133.8,136.2,136.5,139.7,144.7,138.8,145.2
+29," Champaign-Urbana, IL ",IL,Central,127.2,137.7,143,144.1,141.9,140.6,141.9,143.9,149.1
+30,"Charleston-North Charleston, SC ",SC,Southeast,183.5,197,212.4,215.4,206.2,192.7,200.5,197,207.5
+31,"Charleston, WV",WV,Southeast,111.3,118.4,119.4,122.5,126.9,126.8,129.1,129.8,132.3
+32,"Charlotte-Gastonia-Concord, NC-SC ",NC-SC,Southeast,168,180.9,190.6,204.3,197.8,189.1,191,,156.6
+33,"Chattanooga, TN-GA",TN-GA,Southeast,125.4,131.9,136,130.9,129.1,122.6,121.4,121.4,129.1
+34,"Chicago-Naperville-Joliet, IL ",IL,Central,240.1,264.2,273.5,276.6,245.6,199.2,191.4,176.5,175.3
+35,"Cincinnati-Middletown, OH-KY-IN ",OH-KY-IN,Central,142.5,145.9,143.2,140.8,131.8,125.8,128,122.3,128.3
+36,"Cleveland-Elyria-Mentor, OH ",OH,Central,136.4,138.9,134.4,130,108.5,106.8,114.5,105.1,110
+37,"Colordo Springs, CO",CO,West,187.6,205.9,218.2,217.5,205.5,189.8,195.5,187.2,201.6
+38,"Columbia, MO",MO,Central,,,,,146.3,146.7,146.3,150.3,153.7
+39,"Columbia, SC",SC,Southeast,123.4,135,141.6,146.6,145,139.2,142.6,140.6,142
+40,"Columbus, OH",OH,Central,146.7,152,148.1,147.4,139.3,134.9,136.4,123.9,136.5
+41,"Corpus Christi, TX",TX,Southeast,112.7,125.2,131.8,136.5,139.1,134.3,135.1,134.2,142.7
+42,"Cumberland, MD-WV ",MD-WV,Northeast,72.7,87.4,95.7,109.4,99.5,118.3,100.3,88.8,96.2
+43,"Dallas-Fort Worth-Arlington, TX ",TX,Southeast,138.2,147.6,149.5,150.9,145.8,140.5,143.8,148.9,159.3
+44,"Davenport-Moline-Rock Island, IA-IL ",IA-IL,Central,107.8,117.9,119.7,108.7,94.2,110.3,112.2,109.9,114.6
+45,"Dayton, OH ",OH,Central,115.8,119.7,116.7,115.6,107,104.1,103.6,93.3,103.9
+46,"Decatur, AL",AL,Southeast,,,,,,,,106.3,112.9
+47,"Decatur, IL ",IL,Central,75.5,82.1,85.4,83.1,87.4,86.7,86.5,87.5,85.1
+48,"Deltona-Daytona Beach-Ormond Beach, FL ",FL,Southeast,148.6,192.5,205.8,192.3,164.1,124.6,115.6,104.8,107.9
+49,"Denver-Aurora, CO",CO,West,239.1,247.1,249.5,245.4,219.3,219.9,232.4,231.4,252.4
+50,"Des Moines, IA",IA,Central,140.8,145.5,145.1,149.2,153.2,149.3,150.9,151.1,158.6
+51,"Detroit-Warren-Livonia, MI ",MI,Central,161,163.8,151.7,140.3,,,,53.8,63.4
+52,"Dover, DE ",DE,Northeast,150.1,180.4,208,207.5,206.2,197.1,193.3,170.8,175.3
+53,"Durham, NC",NC,Southeast,,,,,180.6,176.9,177.9,,185.7
+54,"Elmira, NY ",NY,Northeast,78.8,77.1,86.8,81.6,87.7,87.3,101,103.4,106.9
+55,"El Paso, TX",TX,Southeast,94.7,111.8,127.6,131.9,137.5,132.6,134.3,134.3,138.6
+56,"Erie, PA ",PA,Northeast,98.6,100,101.3,98.1,99.5,97.9,107.7,109.7,114.9
+57,"Eugene-Springfield, OR",OR,West,164.9,197.6,230.6,239.6,224.7,203.7,196.3,,
+58,"Fargo, ND-MN ",ND-MN,Central,124.2,132.8,136.5,140.9,139.1,140.2,146.4,148.6,153.1
+59,"Farmington, NM ",NM,West,134.6,155.1,172.3,191.1,190.6,187.5,178.9,174.4,173.9
+60,"Fayetteville, NC",NC,Southeast,,,,,,,152.5,152.3,152
+61,"Florence, SC ",SC,Southeast,,,,,117.3,114.5,118.1,114.6,128.3
+62,"Ft. Wayne, IN",IN,Central,96.6,102.3,99.7,97.1,92.6,94,97.4,95.4,106.2
+63,"Gainesville, FL",FL,Southeast,159,184,213.2,211.1,188.6,167.6,161.6,148.6,145.6
+64,"Gary-Hammond, IN",IN,Central,122.6,129.8,128.1,134.2,127.7,119.2,122.9,120.6,126.1
+65,"Glens Falls, NY ",NY,Northeast,129.3,153.1,161.6,167.6,161.1,153.5,147.5,156.2,164.4
+66,"Grand Rapids, MI",MI,Central,132.9,137.8,134.5,129.4,100.9,87.4,91.5,99.5,112.5
+67,"Green Bay, WI",WI,Central,143.3,154.8,151.3,150.7,146.2,136.2,130.4,134.8,134.5
+68,"Greensboro-High Point, NC ",NC,Southeast,139.8,147.8,149.4,152,145.3,132.8,129.8,123.8,124.8
+69,"Greenville, SC ",SC,Southeast,135.8,145.4,152,153.6,155.7,141.4,145.3,144.5,152
+70,"Gulfport-Biloxi, MS",MS,Southeast,113.9,131.4,145.8,154.5,140.2,133.9,125,104.8,101
+71,"Hagerstown-Martinsburg, MD-WV ",MD-WV,Northeast,165.9,208.7,223.1,208.5,185.8,157.1,144.4,131.3,134.7
+72,"Hartford-West Hartford-East Hartford, CT",CT,Northeast,231.6,253.3,258.1,263.2,246.2,232,235.8,227.6,222.8
+73,"Honolulu, HI",HI,West,460,590,630,643.5,624,596.2,607.6,597,628.8
+74,"Houston-Baytown-Sugar Land, TX ",TX,Southeast,136,143,149.1,152.5,151.6,153.1,155,155.7,164.8
+75,"Huntsville, AL",AL,Southeast,,,,,,,,172.8,173.6
+76,"Indianapolis, IN",IN,Central,121.7,123.8,119.3,120.5,111.2,114.2,123.3,123.9,129.6
+77,"Jackson, MS ",MS,Southeast,118.1,133.8,147.1,139,128.7,134.9,133.2,135.9,143.7
+78,"Jacksonville, FL",FL,Southeast,150.7,175.2,193,189.2,174.6,145.9,137.7,123.6,128.2
+79,"Kankakee-Bradley, IL ",IL,Central,120,127.1,131.5,134.5,130.8,129.2,116.3,118.4,119.3
+80,"Kansas City, MO-KS",MO-KS,Central,150,156.7,155.8,153.3,144.3,140.7,141.6,133.2,142.6
+81,"Kennewick-Richland-Pasco, WA ",WA,West,147.6,154.1,156.1,169.2,166.1,167.1,177.6,,183.3
+82,"Kingston, NY ",NY,Northeast,216.8,251,252.7,258.4,242.1,208.4,213.8,201.2,190.2
+83,"Knoxville, TN",TN,Southeast,132.2,143.7,151.2,156.4,149.1,141.4,140.9,141,141.3
+84,"Lansing-E.Lansing, MI",MI,Central,137.9,142.2,137.7,126.8,97.7,80.7,84.4,77.5,87.2
+85,"Las Vegas-Paradise, NV ",NV,West,266.4,304.7,317.4,297.7,220.5,142.9,138,124.7,134.1
+86,"Lexington-Fayette,KY",KY,Southeast,138.7,146.9,147.8,147.5,144.3,141.4,143.2,138.6,143.2
+87,"Lincoln, NE",NE,Central,134.4,137.2,137.5,137.5,135.2,133.3,133.6,133,139.6
+88,"Little Rock-N. Little Rock, AR",AR,Southeast,108.4,119,127,129.1,129.8,131.8,132.5,129.8,138.2
+89,"Los Angeles-Long Beach-Santa Ana, CA ",CA,West,446.4,529,584.8,593.6,402.1,333.9,316.7,307.7,327.5
+90,"Louisville, KY-IN",KY-IN,Southeast,131.5,135.8,137.6,137.4,132.2,131.1,134.6,130.4,137.1
+91,"Madison, WI",WI,Central,200.8,218.3,223.2,226.5,226.6,212.3,217.7,213.2,210.6
+92,"Manchester-Nashua, NH",NH,Northeast,,,,,242.8,227.1,232,213.5,212.8
+93,"Memphis, TN-MS-AR ",TN-MS-AR,Southeast,136.2,141.2,142.3,137.2,119.3,119.2,120.2,112.3,117.2
+94,"Miami-Fort Lauderdale-Miami Beach, FL ",FL,Southeast,286.4,363.9,371.2,365.5,285.1,211.2,201.9,181.1,203.1
+95,"Milwaukee-Waukesha-West Allis, WI ",WI,Central,197.1,215.7,220.9,223.4,212.3,193.4,205.9,185.2,187.4
+96,"Minneapolis-St. Paul-Bloomington, MN-WI ",MN-WI,Central,217.4,234.8,232.3,225.2,202,177.7,170.6,154.7,171.8
+97,"Mobile, AL",AL,Southeast,115.2,130.5,137,136.4,134.2,127.6,121,103.2,105
+98,"Montgomery, AL",AL,Southeast,116.6,133.3,144.2,143.8,135.2,130.2,129,128.2,128.3
+99,"Nashville-Davidson--Murfreesboro, TN",TN,Southeast,,,,,,,153.8,151.9,151.9
+100,"New Haven-Milford, CT ",CT,Northeast,249.2,279.1,287.7,286.5,263.8,235.7,231,223.1,220.6
+101,"New Orleans-Metairie-Kenner, LA ",LA,Southeast,137.4,159.2,173.1,160.3,160.5,160.1,159.7,153,156.2
+102,"New York-Northern New Jersey-Long Island, NY-NJ-PA",NY-NJ-PA,Northeast,385.9,445.2,469.3,469.7,437.9,381.4,393.7,378.7,379.7
+103,"New York-Wayne-White Plains, NY-NJ ",NY-NJ,Northeast,436.6,495.2,539.4,540.3,494.3,437.2,450,442.6,445.6
+104,"Norwich-New London, CT ",CT,Northeast,231.5,255.9,264,267.7,236.6,211.8,204.7,184.1,186.9
+105,"NY: Edison, NJ ",NJ,Northeast,328.1,375.5,387.7,380.3,365.2,331.9,345.4,313.9,299.1
+106,"NY: Nassau-Suffolk, NY  ",NY,Northeast,413.5,465.2,474.7,477.2,435.8,383.3,387,375.9,382.7
+107,"NY: Newark-Union, NJ-PA ",NJ-PA,Northeast,375.8,416.8,433,443.7,417.2,366.6,379.2,370.5,369.7
+108,"Ocala, FL",FL,Southeast,110.1,143.5,165.8,164.6,137.5,107.4,87.8,80.9,
+109,"Oklahoma City, OK",OK,Central,112.4,114.7,125,134.9,128.1,140.5,145.7,141.6,145
+110,"Omaha, NE-IA",NE-IA,Central,131.3,136.2,138.4,138,135.2,133.7,137.3,135.7,139.3
+111,"Orlando, FL",FL,Southeast,169.6,243.6,270.4,261.3,208.9,147.4,134.7,124.9,134
+112,"Palm Bay-Melbourne-Titusville, FL ",FL,Southeast,153.4,209.7,212,183.6,144.7,107,103,108.5,116.5
+113,"Pensacola-Ferry Pass-Brent, FL ",FL,Southeast,131.1,162.1,166,165.6,155.7,145.7,141,134.6,135.9
+114,"Peoria, IL",IL,Central,96.3,109.3,112.7,118.6,122.1,119.4,116.9,119.8,130.3
+115,"Philadelphia-Camden-Wilmington, PA-NJ-DE-MD ",PA-NJ-DE-MD,Northeast,185.1,215.3,230.2,234.9,231.4,215.9,214.9,210.1,213.4
+116,"Phoenix-Mesa-Scottsdale, AZ",AZ,West,169.4,247.4,268.2,257.4,191.3,137,139.2,115.5,147.6
+117,"Pittsburgh, PA",PA,Northeast,113.4,116.1,116.1,120.7,,,,,
+118,"Pittsfield, MA ",MA,Northeast,192.8,207.3,212.9,217.4,212.6,186.4,195.5,188.3,183.1
+119,"Portland-South Portland-Biddeford, ME ",ME,Northeast,224.8,246.6,243.8,242.7,229.3,203.5,218,213.7,219.5
+120,"Portland-Vancouver-Beaverton, OR-WA ",OR-WA,West,206.5,244.9,280.8,295.2,280.1,244.1,237.3,219.5,232.9
+121,"Providence-New Bedford-Fall River, RI-MA ",RI-MA,Northeast,276.9,293.4,289.6,286.5,250.6,218.5,228.5,217.2,214.7
+122,"Raleigh-Cary, NC ",NC,Southeast,169.9,194.9,213.8,224.2,223.4,215.4,217.6,,
+123,"Reading, PA ",PA,Northeast,121.1,136.6,143.2,154.7,155.7,152.8,153.3,143.1,146
+124,"Reno-Sparks, NV ",NV,Northeast,284.3,349.9,347.2,321.4,259.1,193.8,179.5,158,169.9
+125,"Richmond, VA ",VA,Southeast,170.7,201.9,225.5,233.7,223.5,,,,
+126,"Riverside-San Bernardino-Ontario, CA ",CA,West,296.4,374.2,400.7,379.5,234.2,169.7,179.3,172.3,189.3
+127,"Rochester, NY",NY,Northeast,106.5,113.5,114.8,117.9,117,116.4,118.9,119.7,124.2
+128,"Rockford, IL",IL,Central,103.6,118.2,119.3,119.3,117,108.2,106.9,92,89.2
+129,"Sacramento--Arden-Arcade--Roseville, CA ",CA,West,317,375.9,374.5,342.8,216.7,180.5,183.6,166.1,176.8
+130,"Saint Louis, MO-IL",MO-IL,Central,128.7,141,148.4,145.4,133.2,127.1,131.1,121.8,123.9
+131,"Salem, OR ",OR,West,154.6,177.7,212.9,228.3,208.8,183.7,173.5,146.2,147.7
+132,"Salt Lake City, UT ",UT,West,158,173.9,203,232,229.6,217,206.5,182.2,
+133,"San Antonio, TX",TX,Southeast,122.7,133.9,141.7,153.2,152.8,149.3,151,152.5,159.5
+134,"San Diego-Carlsbad-San Marcos, CA ",CA,West,551.6,604.3,601.8,588.7,385.6,359.5,385.2,370.3,385.5
+135,"San Francisco-Oakland-Fremont, CA ",CA,West,641.7,715.7,752.8,804.8,622,493.3,525.3,483.4,543.8
+136,"San Jose-Sunnyvale-Santa Clara, CA",CA,West,698.5,744.5,775,836.8,668,530,602.4,570,645
+137,"Sarasota-Bradenton-Venice, FL ",FL,Southeast,255.7,354.2,334.3,310.9,240.6,170.5,164.6,156.2,171.9
+138,"Seattle-Tacoma-Bellevue, WA ",WA,West,284.6,316.8,361.2,386.9,357.2,306.2,295.7,285,300.4
+139,"Shreveport-Bossier City, LA ",LA,Southeast,110.6,124.3,132.2,135.6,138.5,147,156.6,156.2,156.6
+140,"Sioux Falls, SD",SD,Central,129.2,135.8,138,144.5,142.3,139.2,143.3,141.4,149.2
+141,"South Bend-Mishawaka, IN",IN,Central,93.6,96.6,92.7,90.7,86,85.2,83.1,83.6,85.7
+142,"Spartanburg, SC ",SC,Southeast,110.8,121.2,126.7,128.6,127.3,120.7,118.2,117,122.7
+143,"Spokane, WA",WA,West,128.5,156.4,184.1,193.8,191.2,175.2,172.2,162.3,169.5
+144,"Springfield, IL",IL,Central,103.3,106.4,105.4,109,108,113.9,124,117.2,121
+145,"Springfield, MA",MA,Northeast,180.3,201.8,209.6,211.9,200.6,186.4,190,181.4,178.9
+146,"Springfield, MO",MO,Central,114.1,121.1,124.8,122.6,121.1,114.6,109.1,104.7,108.4
+147,"Syracuse, NY",NY,Northeast,98.4,110.6,116.8,121.8,120.2,121,125.1,122.9,124.8
+148,"Tallahassee, FL",FL,Southeast,152.5,167.6,177.5,179.5,179.9,150.9,152.8,143,144.9
+149,"Tampa-St.Petersburg-Clearwater, FL",FL,Southeast,159.7,205.3,228.9,214.9,173,140.7,134.2,127.8,138.1
+150,"Toledo, OH",OH,Central,113.5,117.3,110,106.6,91.2,83.4,81.5,75.7,80.4
+151,"Topeka, KS",KS,Central,102.1,105.7,106.1,111.9,108,108.4,107.2,101.5,106.2
+152,"Trenton-Ewing, NJ ",NJ,Northeast,234.2,261.1,289.6,307.1,303.2,263.7,250.7,240.1,250.3
+153,"Tucson, AZ",AZ,West,177.3,231.6,244.9,244.8,204.3,172.5,156.6,134.5,149.9
+154,"Tulsa, OK",OK,Central,,,,,136.9,130.1,132.3,129.7,136.3
+155,"Virginia Beach-Norfolk-Newport News, VA-NC ",VA-NC,Southeast,163,197.2,216,226.8,220,210,205,182.9,187.5
+156,"Washington-Arlington-Alexandria, DC-VA-MD-WV ",DC-VA-MD-WV,Northeast,339.8,425.8,431,430.8,343.4,308.6,325.3,325.4,352
+157,"Waterloo/Cedar Falls, IA",IA,Central,95.2,102.2,108.9,112.8,111.5,110.6,112.1,112.8,117.6
+158,"Wichita, KS",KS,Central,103.9,108,114.9,115.6,121.8,118.7,118.7,115.6,116.9
+159,"Winston-Salem, NC",NC,Southeast,,,,,,,134.7,125.9,123.6
+160,"Worcester, MA",MA,Northeast,275.9,290.7,281.7,274.6,237.1,217.7,223.3,209.6,206
+161,"Yakima, WA",WA,West,129.9,133.9,136.5,156.5,153.3,155.2,155.7,150.4,161.7
+162,"York-Hanover, PA",PA,Northeast,,,,,,,158.6,151.6,146.8
+163,"Youngstown-Warren-Boardman, OH-PA ",OH-PA,Central,86,85.6,81.5,78.9,71.7,66.5,67.2,,

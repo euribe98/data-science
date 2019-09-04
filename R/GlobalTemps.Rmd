@@ -1,0 +1,389 @@
+---
+title: 'Global Temps'
+author: "Evan Uribe"
+date: "July 4, 2019"
+
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+
+
+```{r init}
+
+# remove global environment
+rm(list = ls())
+
+showCode = TRUE
+fileName = 'data/GlobalTemperatures.csv'
+skipcols =c ('LandAverageTemperatureUncertainty','LandMaxTemperatureUncertainty',
+           'LandMinTemperatureUncertainty','LandAndOceanAverageTemperatureUncertainty',
+           'LandMinTemperature')
+
+```
+
+Read the data and filter out 'uncertainty' columns and filter dates from 1850 to 2015
+
+```{r dataload, echo = showCode, comment=NA}
+
+globaltemps <- read.csv(fileName)
+globaltemps [ , skipcols] <- list(NULL)  # delete these columns
+globaltemps$dt = as.Date(globaltemps$dt) # convert dt to Date object
+
+# filter by dates
+library(dplyr)  
+globaltemps <- globaltemps %>% 
+  filter(dt >= as.Date("1850-01-01") & dt <= as.Date("2015-12-01"))
+
+dim (globaltemps) # show its dimensions
+
+```
+
+Function Definitions
+
+```{r functions, echo = showCode, comment=NA}
+
+# supporess library load warning messages
+shhh <- suppressPackageStartupMessages
+
+shhh (library (grid))
+shhh (library(tidyr))
+shhh (library(ggplot2))
+shhh (library(tidyverse) )     # data manipulation and visualization
+shhh (library(lubridate) )     # easily work with dates and times
+shhh (library(fpp2))          # working with time series data
+shhh (library(zoo))           # working with time series data
+
+
+
+##### helper function to plot mulitple plots on the same panel (i.e. similiar to subplots)
+multiplot <- function(..., plotlist=NULL, cols) {
+    
+    # Make a list from the ... arguments and plotlist
+    plots <- c(list(...), plotlist)
+
+    numPlots = length(plots)
+
+    # Make the panel
+    plotCols = cols                          # Number of columns of plots
+    plotRows = ceiling(numPlots/plotCols) # Number of rows needed, calculated from # of cols
+
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(plotRows, plotCols)))
+    vplayout <- function(x, y)
+        viewport(layout.pos.row = x, layout.pos.col = y)
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+        curRow = ceiling(i/plotCols)
+        curCol = (i-1) %% plotCols + 1
+        print(plots[[i]], vp = vplayout(curRow, curCol ))
+    }
+}
+
+#### Plot time series for each variable
+plotIndividualPlots <- function(startDt="1850-01-01", endDt="2015-12-01") {
+  
+  ss <- subset(globaltemps, dt >= as.Date(startDt) & dt <= as.Date(endDt))
+  
+  p1 <- ggplot(data = ss, aes(x = dt, y = LandAverageTemperature))+
+    geom_line(color = "green", size = 1) +
+    ggtitle(paste('LandAverageTemperature', startDt, '-', endDt)) +
+    xlab('date') + ylab('temperature') 
+   
+  p2 <- ggplot(data = ss, aes(x = dt, y = LandMaxTemperature))+
+      geom_line(color = "orange", size = 1)+
+      ggtitle(paste('LandMaxTemperature', startDt, '-', endDt)) +
+      xlab('date') + ylab('temperature') 
+  
+  p3 <- ggplot(data = ss, aes(x = dt, y = LandAndOceanAverageTemperature))+
+      geom_line(color = "blue", size = 1)+
+      ggtitle(paste('LandAndOceanAverageTemperature', startDt, '-', endDt)) +
+      xlab('date') + ylab('temperature') 
+  
+  multiplot(p1, p2, p3, cols=2)
+}
+
+#### time series plot
+plotTimeSeries <- function(startDt="1850-01-01", endDt="2015-12-01", colName=NULL) {
+ 
+ ss <- subset(globaltemps, dt >= as.Date(startDt) & dt <= as.Date(endDt))
+  
+ df <- ss %>%
+    select(dt, LandAverageTemperature, LandMaxTemperature,LandAndOceanAverageTemperature) %>%
+    gather(key = "variable", value = "value", -dt)
+  
+  p <- ggplot(df, aes(x = dt, y = value)) + 
+    geom_line(aes(color = variable), size = 1) +
+    scale_color_manual(values = c("blue", "green", "orange")) +
+    ggtitle(paste('Temperatures', startDt, '-', endDt)) +
+    xlab('date') + ylab('temperature') 
+  
+  p + theme(plot.title = element_text(color="black", size=10, face="bold", hjust=0.5),
+       axis.title.x = element_text(color="black", size=8),
+       axis.title.y = element_text(color="black", size=8)) +
+       #theme(legend.position = "none") # hides the legend +
+       theme(legend.position="bottom")
+}
+
+
+
+####  functions to plot moving average
+
+plotMovingAvgAll <- function(startDt="1850-01-01", endDt="2015-12-01", kval=121) {
+  
+  ss <- subset(globaltemps, dt >= as.Date(startDt) & dt <= as.Date(endDt))
+   
+  temp.zoo <- zoo(ss$LandAverageTemperature, ss$dt)
+  temp2.zoo <- zoo(ss$LandMaxTemperature, ss$dt)
+  temp3.zoo <- zoo(ss$LandAndOceanAverageTemperature, ss$dt)
+  
+  # rolling averaage
+  m.av <- rollmean(temp.zoo, k=kval, fill=NA)
+  ss$LandAverageTemperature.ma = coredata(m.av)
+
+  #m2.av<-rollmean(temp2.zoo,121,fill=list(NA,NULL,NA))
+  m2.av <- rollmean(temp2.zoo, k=kval, fill=NA)
+  ss$LandMaxTemperature.ma = coredata(m2.av)
+  
+  m3.av <- rollmean(temp3.zoo, k=kval, fill=NA)
+  ss$LandAndOceanAverageTemperature.ma = coredata(m3.av)
+  
+  # now remove thse columns prior to plotting
+  ss <- subset(ss, select = -c(LandAverageTemperature, LandMaxTemperature,
+                               LandAndOceanAverageTemperature))
+  
+  # now plot
+  shhh (library(reshape))
+  
+  ss.long <- melt(ss, id.vars="dt")
+  p = ggplot(data = ss.long, aes(dt, value, color=variable), na.rm=TRUE) +
+    geom_line(na.rm=TRUE)+
+    xlab('date') + ylab('temperature') 
+  
+  p + theme(plot.title = element_text(color="black", size=10, face="bold", hjust=0.5),
+       axis.title.x = element_text(color="black", size=8),
+       axis.title.y = element_text(color="black", size=8)) +
+       theme(legend.position="bottom")
+
+}
+
+# plot a single moving average with only moving average data
+plotMovingAvg <- function(startDt="1850-01-01", endDt="2015-12-01", colName=NULL, kval=121) {
+
+   ss <- subset(globaltemps, dt >= as.Date(startDt) & dt <= as.Date(endDt))
+   
+   tempdf <- ss %>%
+      select(dt, temps = colName) %>%
+      mutate(ma10 = rollmean(temps, k = kval, fill = NA))
+  
+  # now plot
+  tempdf %>%
+    gather(metric, value, ma10) %>%
+    ggplot(aes(dt, value, color = metric), na.rm=TRUE) +
+    geom_line(na.rm=TRUE) +
+    ggtitle(paste(colName[1], startDt,  "-", endDt)) +
+    xlab("date") + ylab("temperature")
+}
+  
+# plot a single moving average and includes the original data
+plotMovingAvg2 <- function(startDt="1850-01-01", endDt="2015-12-01", colName=NULL, kval=121) {
+  
+    s = as.Date(startDt)
+    year <- as.numeric(format(s,'%Y'))
+    
+    ss <- subset(globaltemps, dt >= s & dt <= as.Date(endDt))
+    
+    temps.ts <- ss %>%
+       select(temp = colName) %>%
+          ts(start = c(year, 1), frequency = 12)  # convert to time series
+    
+    head(temps.ts, 12)
+    
+    # now plot
+   p = autoplot(temps.ts, series = "LandAverageTemperature") + 
+      autolayer(ma(temps.ts, kval), series = "10 yr MA", na.rm=TRUE) +
+      ggtitle(paste('Temperatures:', startDt,  "-", endDt)) +
+      xlab("date") + ylab("temperature")
+    
+    p + theme(plot.title = element_text(color="black", size=10, face="bold", hjust=0.5),
+         axis.title.x = element_text(color="black", size=8),
+         axis.title.y = element_text(color="black", size=8)) +
+         theme(legend.position="bottom")
+
+}
+
+###  
+firstOrderDiffPlot <- function(startDt="1850-01-01", endDt="2015-12-01", colName=NULL) {
+  s = as.Date(startDt)
+  year <- as.numeric(format(s,'%Y'))
+    
+  ss <- subset(globaltemps, dt >= s & dt <= as.Date(endDt))
+  ts1 <- ss %>%
+       select(temp = colName) %>%
+          ts(start = c(year, 1), frequency = 12)  # convert to time series
+    
+    plot(diff(ts1), xlab = "date",  ylab="temperature", main=colName[1])
+    #plot(diff(log(ts1)))
+    
+    return(diff(ts1))
+}
+
+```
+
+Verify the starting date range
+
+```{r echo = showCode, comment=NA}
+head(globaltemps, 3)
+```
+
+Verify the ending date range
+
+```{r echo = showCode, comment=NA}
+tail (globaltemps, 3)
+
+```
+
+#### Plot 'LandAverageTemperature', 'LandAndOceanAverageTemperature','LandMaxTemperature
+
+```{r echo = showCode, comment=NA}
+
+plotTimeSeries()
+plotIndividualPlots()
+```
+
+The plots show periocidicy as well as a gradual upward trend. From the invidual graphs, increased warming looks to have become more constant starting around the 1970's with sharper increases evident in 1990's and continuting to the current period.
+
+But given the wide range of years (165), it's difficult to make out the specifics, so let's plot for a shorter period.
+
+```{r echo = showCode, comment=NA}
+# first 10 years
+plotTimeSeries(endDt = '1860-01-01')
+```
+
+
+```{r echo = showCode, comment=NA}
+# last 10 years
+plotTimeSeries(startDt = '2005-01-01')
+
+```
+
+Plotting for the first and last 10 years of readings, the patterns of seasonality is evident. Temperatures are at their lowest in Winter, gradually increasing to a peak at around June then decreasing until reaching a negative peak in Decememer. This is an expected weather pattern.
+
+What's stark is the increased temperatures (across all 3 variables) evidenced in the last 10 years. From 1850 to 1860, there was only one perid where LandMaxTemperature was over 20 (1854-1855) but in the lat 10 years of readings (2005 to 2015), all LandMaxTemperature readings were well over 20.
+
+##### Identifying Trends in Time Series
+
+Time series data often exhibit some slow, gradual variability in addition to higher frequency variability such as seasonality and noise. An easy way to visualize these trends is with rolling means at different time scales. While we have observed seasonal trends in the graphs above, by taking rolling averages we will be able to better visualize the upward trend.
+
+With a rolling average for each time point, the average of the points on either side of it is taken. The affect is that it smooths out noise and seasonality, allowing visualization of trends.
+
+Let's take 10 year rolling averages for each variable.
+
+
+```{r  echo = showCode, comment=NA}
+ 
+plotMovingAvg(colName=c('LandAverageTemperature')) 
+
+```
+
+```{r echo = showCode, comment=NA}
+
+plotMovingAvg(colName=c('LandMaxTemperature')) 
+
+```
+
+```{r echo = showCode, comment=NA}
+
+plotMovingAvg(colName=c('LandAndOceanAverageTemperature')) 
+
+```
+
+All 3 variables show clear upward trends. The steady climb in temperature is most evident in the period from 1900 to 1944, then a stabilization from 1944 to 1970 and then again a steady climb from 1970 to the current day. The over-all trend is upwards.
+
+Let's view each of these together in a single graph for comparision.
+
+```{r echo = showCode, comment=NA}
+
+plotMovingAvgAll()
+
+```
+
+Here, we see an over-all upward trend. All 3 variables mirror eachother with matching peaks and valleys.
+
+While much of the seasonality was removed using rolling averages, to further explore seasonality, we can remove the trend from the time series.
+
+#### Seasonal Patterns in Time Series Data
+One way to remove the trend is called "differencing", where we look at the difference between successive data points ("first-order differencing"), because we're only looking at the difference between one data point and the one before it).
+
+Differencing is helpful in turning time series into a stationary time series. Stationary time series is one whose statistical properties (such as mean and variance) don't change over time. These time series are useful because many time series forecasting methods are based on the assumption that the time series is approximately stationary.
+
+Start off by plotting the first-order difference.
+
+```{r echo = showCode, eval=FALSE}
+ level_of_difference <- ndiffs(LandAverageTemperature)
+ diff_data <- diff(LandAverageTemperature, level_of_difference)
+ diff_data = ts(diff_data, start = c(1850, 1), frequency = 12)  # convert to time series
+
+ plot(diff_data, xlab = 'date', ylab="temperature", 
+      main="first order difference LandAverageTemperature")
+ # tsdisplay(LandAverageTemperature)
+ 
+```
+
+
+```{r echo = showCode, comment=NA}
+ts1 = firstOrderDiffPlot (colName=c('LandAverageTemperature'))
+
+ts2= firstOrderDiffPlot (colName=c('LandMaxTemperature'))
+
+ts3=firstOrderDiffPlot (colName=c('LandAndOceanAverageTemperature'))
+
+```
+
+From the graph, we do see seasonal patterns. 1852 stands out as having been unusually cold, given a large negative spike in LandMaxTemperature.
+
+```{r}
+firstOrderDiff <- data.frame(ts1, ts2, ts3)
+names(firstOrderDiff) <- c("LandAverageTemperature", "LandMaxTemperature", "LandAndOceanAverageTemperature")
+```
+
+#### Periodicity and Autocorrelation
+A time series is periodic if it repeats itself at equally spaced intervals, say, every 12 months. The time series is correlated with itself shifted by 12 months. That means that, if you took the time series and moved it 12 months backwards or forwards, it would map onto itself in some way.
+
+```{r echo = showCode, comment=NA}
+
+df = subset(globaltemps, select = -c(dt))
+cor(df)
+
+```
+
+Everything is highly correleated, which is not unexpected given that all variables are some view into land temperature.
+
+The actual correlation coefficient is actually capturing both season and trend. By plotting the first-order differences of these time series and then computing the correlation we get the correlation of the seasonal components, approximately.
+
+Let's compute the correlation coefficients prior to removing trend
+
+```{r echo = showCode, comment=NA}
+  cor(firstOrderDiff)
+```
+
+Everything is still highly correleated though only a little less so without trend.
+
+
+
+#### Autocorrelation Plots
+Here, we look at the plots and what we expect to see is a spike in autocorrelation at 12 months: the time series is correlated with itself shifted by twelve months. This makes sensense given the yearly seasonal patterns of weather and its correlation to land temperature.
+
+```{r echo = showCode, comment=NA}
+
+ggAcf(globaltemps$LandAverageTemperature)
+ggAcf(globaltemps$LandMaxTemperature) 
+ggAcf(globaltemps$LandAndOceanAverageTemperature) 
+```
+
+
+
