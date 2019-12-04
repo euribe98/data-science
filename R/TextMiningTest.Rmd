@@ -1,0 +1,158 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+https://www.youtube.com/watch?v=I0VCGCnquTQ
+
+```{r}
+rm(list = ls())
+
+library(twitteR)
+library(tm)
+library (ROAuth)
+library(base64enc)
+library(SnowballC)
+library(syuzhet)
+
+```
+
+Access setup
+
+```{r}
+# need only be don once after caching
+
+appname <- "gguSentiment"
+api_key <- "oGR0V4nvOX6GFTsl2Tme1PakD"
+api_secret_key <- "BXAXdkFqADsT3dDEnDlGYeDHgfp8NBqtYhpNySejE771H4ba8p"
+
+access_token <- '901150381-B9XjpI50KC2kVnMzOInqfbfpVQjFKakzIo33ffJq'
+access_token_secret <- 'uvm1Tk7gE4k0fWhjQBILGAoNeUdBAZazws82Sfn2oj1rw'
+
+reqURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "https://api.twitter.com/oauth/authorize"
+
+consumerKey <- api_key
+consumerSecret <- api_secret_key
+accessToken <- access_token 
+accessTokenSecret <- access_token_secret
+
+# Use a local file ('.httr-oauth'), to cache OAuth access credentials between R sessions?
+# Adding .httr-oauth to .gitignore  
+# (do in console)
+#setup_twitter_oauth(consumerKey, consumerSecret, accessToken, accessTokenSecret)
+
+```
+
+values to search
+
+```{r}
+user = "realDonaldTrump"
+
+tags = c("#Nike")
+limit = 100
+
+```
+
+
+get tweets from user
+
+```{r}
+tweets <- userTimeline (user, n=limit)
+tweets.df <- twListToDF (tweets)
+head(tweets.df)
+```
+
+Search tweets by hasthtag
+
+```{r}
+
+tweets = searchTwitter(tags, n=limit)
+tweets.df <- twListToDF (tweets)
+head(tweets.df)
+
+```
+
+
+Save to csv
+
+```{r}
+save_as_csv(tweets.df, 'tweets.csv', prepend_ids = TRUE, na = "",
+  fileEncoding = "UTF-8")
+
+```
+
+
+
+```{r}
+head(tweets.df$text)
+```
+
+Clean up tweet text to prepare for analysis 
+
+```{r}
+tweets.df2 <- gsub ("http.*", "", tweets.df$text)	# Remove http
+tweets.df2 <- gsub ("https.*", "", tweets.df2)	# Remove https
+tweets.df2 <- gsub ("#.*", "", tweets.df2)		# Remove #
+tweets.df2 <- gsub ("@.*", "", tweets.df2)		# Remove @
+
+head(tweets.df2)
+```
+
+Sentiment score analysis
+
+R package “syuzhet” categorizes sentiment into 10 different emotions: 
+Anger; Anticipation; Disgust; Fear; Joy;
+Sadness; Surprise; Trust; Negative; Positive
+
+```{r}
+word.df <- as.vector (tweets.df2)		
+emotion.df <- get_nrc_sentiment (word.df)
+emotion.df2 <- cbind (tweets.df2, emotion.df)
+head (emotion.df2)
+
+```
+
+Get most positive
+```{r}
+sentiment.value <- get_sentiment (word.df)
+most.positive <- word.df [ sentiment.value == max (sentiment.value) ]
+most.positive
+
+```
+
+Get the most negative
+```{r}
+sentiment.value <- get_sentiment (word.df)
+most.negative <- word.df [ sentiment.value == min (sentiment.value) ]
+most.negative
+
+
+```
+
+We can ask R to categorize tweets as positive, negative, or neutral, depending on value of sentiment.value
+
+Declare positive, negative, and neutral tweets, based on sentiment values
+
+```{r}
+positive.tweets <- word.df [sentiment.value > 0]
+head (positive.tweets)
+
+negative.tweets <- word.df [sentiment.value < 0]
+head (negative.tweets)
+
+neutral.tweets <- word.df [sentiment.value == 0]
+head (neutral.tweets)
+
+```
+
+Create a table of sentiment
+```{r}
+category_sentiment <- ifelse (sentiment.value < 0, 'Negative', 
+  ifelse (sentiment.value > 0, 'Positive', 'Neutral' ))
+
+table (category_sentiment)
+
+```
+

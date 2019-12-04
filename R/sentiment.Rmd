@@ -1,0 +1,303 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+#### functions
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+
+## Read twitter files
+library(readr) 
+readCsv <- function(datafile) {
+  df <- read_csv(datafile)
+  return (df)
+}
+
+## Revenu Pie Charts
+pieChart <- function(df, year, maintitle='') {
+yeardf <- df %>%
+    filter(variable == year)
+
+  slices <- c(yeardf $value)
+  pct <- round(slices/sum(slices)*100)
+  labels <- c(yeardf $Product)
+
+  labels <- paste(labels, pct) # add percents to labels
+  labels <- paste(labels,"%",sep="") # ad % to labels
+  #pie(slices,labels, col=rainbow(length(labels)),
+  pie(slices,labels, col=brewer.pal(length(labels), name = 'Blues'),
+       main=maintitle)
+}
+
+## Save to csv
+saveCsv <- function(df, fileName) {
+  f=paste(fileName,Sys.Date(), sep='')
+  save_as_csv(df, f, prepend_ids = TRUE, na = "",
+    fileEncoding = "UTF-8")
+}
+
+## wordcloud
+library(wordcloud2)
+library(tidytext)
+library(stringr)
+
+wordCloud <- function (df, exclude) {
+  
+  #Unnest the words - code via Tidy Text
+  hmtTable <- df %>% 
+    unnest_tokens(word, txt)
+  
+  #remove stop words 
+  data(stop_words)
+  hmtTable <- hmtTable %>%
+    anti_join(stop_words)
+  
+  #do a word count
+  hmtTable <- hmtTable %>%
+    count(word, sort = TRUE) 
+  
+  hmtTable <-hmtTable %>%
+    filter(!word %in% exclude) %>%                #Remove unwanted words
+    filter(!str_detect(word, "http\\w+")) %>%     # remove links
+    filter(!str_detect(word, "[[:punct:]]")) %>%   # remove punctuation
+    filter(!str_detect(word, "[[:digit:]]")) %>%       # numbers
+    filter(!str_detect(word, "(RT|via)((?:\\b\\W*@\\w+)+)")) # retweets
+  
+  bing<-get_sentiments('bing')
+  hmtTable<-inner_join(hmtTable, bing)
+  wordcloud2(hmtTable, size=.8) #create wordcloud
+}
+
+#https://www.tidytextmining.com/tidytext.html
+## comparison wordcloud
+library(wordcloud)
+library(reshape2)
+
+compareCloud <- function (df, n_words) {
+  hmtTable <- df %>% 
+      unnest_tokens(word, txt)
+  
+  hmtTable <-hmtTable %>%
+    filter(!str_detect(word, "http\\w+")) %>%     # remove links
+    filter(!str_detect(word, "[[:punct:]]")) %>%   # remove punctuation
+    filter(!str_detect(word, "[[:digit:]]")) %>%       # numbers
+    filter(!str_detect(word, "(RT|via)((?:\\b\\W*@\\w+)+)")) # retweets
+  
+  hmtTable %>%
+    inner_join(get_sentiments("bing")) %>%  # senitment 
+    anti_join(stop_words)  %>%
+    count(word, sentiment, sort = TRUE) %>%
+    acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+    comparison.cloud(colors = c("red", "darkgreen"),
+                     max.words = n_words)
+}
+
+## Sentiment Analysis (Counts)
+#https://www.tidytextmining.com/sentiment.html#most-positive-negative
+library(tidytext)
+library(stringr)
+library(knitr)
+
+wordCount <- function (df) {
+  bing <- get_sentiments("bing")
+  
+  # initial text cleaning and word tokens
+  remove_reg <- "&amp;|&lt;|&gt;"
+  
+  tidy_tweets <- df %>% 
+    filter(!str_detect(txt, "^RT")) %>%
+    mutate(text = str_remove_all(txt, remove_reg)) %>%
+    unnest_tokens(word, txt, token = "tweets") %>%
+    filter(!word %in% stop_words$word,
+           !word %in% str_remove_all(stop_words$word, "'"),
+           str_detect(word, "[a-z]"))
+  
+  # remove stop words, do some other cleaning
+  tidy_tweets <- tidy_tweets %>%
+    anti_join(stop_words) %>%
+    filter(str_detect(word, "[a-z]"))
+  
+  # match to bing lexicon so we only get real words
+  tidy_tweets.bing <- tidy_tweets %>%
+    inner_join(bing, by = "word")
+  
+  # look at frequencies
+  text_wordcounts <- tidy_tweets.bing %>%
+      #group_by(screen_name) %>%
+      #group_by(source) %>%
+      count(word, sentiment, sort = TRUE) %>%
+      ungroup()
+      #%>% arrange(desc(n)) %>%
+      #summarise(most_frequent_word = first(word)) %>%
+      #kable()
+
+   return( text_wordcounts)
+}
+
+## Sentiment analysis
+library(syuzhet)
+library(plotly)
+
+cleanText <- function (txt) {
+  # Convert tweets to ASCII to trackle strange characters
+  tweet_text <- iconv(txt, from="UTF-8", to="ASCII", sub="")
+
+  tweet_text<-gsub('(RT|via)((?:\\b\\W*@\\w+)+)', '', tweet_text) # remove retweets
+  tweet_text<-gsub('@\\w+', '', tweet_text)        # remove mentions
+  tweet_text<-gsub('[[:punct:]]', '',  tweet_text) # remove punctuation
+  tweet_text<-gsub('[[:digit:]]', '', tweet_text)  # remove numbers
+  tweet_text<-gsub('http\\w+', '', tweet_text)     # remove html links
+  tweet_text<-gsub('[ \t]{2,}', '', tweet_text)    # remove unnecessary spaces
+  tweet_text<-gsub('^\\s+|\\s+$', '', tweet_text)
+  tweet_text<-gsub('<.*>', '', enc2native(tweet_text)) # remove emojis 
+  tweet_text<-tolower(tweet_text)
+  return (tweet_text)
+}
+
+plotSentiment <- function (txt, mtitle='') {
+  tweet_text <- cleanText(txt) # data cleaning
+  
+  # get the emotions using the NRC dictionary
+  df_sentiment<-get_nrc_sentiment((tweet_text))
+  sentimentscores<-data.frame(colSums(df_sentiment[,]))
+
+  names(sentimentscores) <- "Score"
+  sentimentscores <- cbind("sentiment"=rownames(sentimentscores),sentimentscores)
+  rownames(sentimentscores) <- NULL
+
+  ggplot(data=sentimentscores,aes(x=sentiment,y=Score))+
+    geom_bar(aes(fill=sentiment),stat = "identity")+
+    theme(legend.position="none")+
+    xlab("")+ylab("")+
+    ggtitle(mtitle)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+               plot.title = element_text(hjust = 0.5, size=10, face="bold"))
+  
+}
+
+
+```
+
+###### test 1
+
+```{r}
+rm(list=ls())
+
+library(readxl)
+auspol2019<- read_excel('auspol2019.xlsx')
+#names (auspol2019)
+
+# counts of +/- words
+df <- tibble(txt = auspol2019$full_text)
+wordcounts = wordCount (df)
+summary = wordcounts %>% 
+             count(sentiment)
+print(summary )
+
+# comparison word cloud
+df <- tibble(txt = auspol2019$full_text)
+compareCloud(df, 200)
+
+# word Sentiment
+plotSentiment(auspol2019$full_text, 'total sentiment')
+
+```
+
+# test 2
+
+https://toddwschneider.com/posts/the-simpsons-by-the-data/
+https://www.kaggle.com/ambarish/fun-in-text-mining-with-simpsons
+
+
+```{r}
+
+#rm(list=ls())
+
+df <- readr::read_csv('simpsons_script_lines.csv')
+simpsons = df[!(is.na(df$raw_character_text) | df$raw_character_text==""),] 
+
+```
+
+# get 20 most active chars
+
+```{r}
+# count
+topChars = simpsons %>%
+  group_by(simpsons$raw_character_text) %>%
+  tally(sort = TRUE)
+
+top20 = head(topChars,20)
+```
+
+# top words
+```{r}
+
+norm_text =  simpsons %>%
+   select(id,raw_character_text,normalized_text)
+
+#get word counts
+df <- tibble(txt = norm_text$normalized_text)
+wordcounts = wordCount (df)
+
+# count negative vs positive
+#summary = wordcounts %>% 
+#             count(sentiment)
+
+# lot word counts
+top20Words <- head(wordcounts,20)
+
+ggplot(top20Words, aes(x = word,y = n  )) +
+  geom_bar(stat='identity',colour="white", fill ='lightblue') +
+  geom_text(aes(x = word, y = 1, label = paste0("(",n,")",sep="")),
+            hjust=0, vjust=.5, size = 4, colour = 'black',
+            fontface = 'bold') +
+  labs(x = 'Word', y = 'Word Count', title = '') +
+  coord_flip() + 
+  theme_bw()
+
+
+```
+
+```
+
+Bart
+
+```{r}
+bart <- simpsons %>%
+ filter(raw_character_text == 'Bart Simpson' )
+#plotSentiment(bart$normalized_text, 'total sentiment')
+
+```
+
+Homer
+```{r}
+homer <- simpsons %>%
+ filter(raw_character_text == 'Homer Simpson' )
+#plotSentiment(homer$normalized_text, 'total sentiment')
+
+```
+Marge
+
+```{r}
+marge <- simpsons %>%
+ filter(raw_character_text == 'Marge Simpson' )
+#plotSentiment(marge$normalized_text, 'total sentiment')
+
+```
+
+Lisa
+```{r}
+lisa <- simpsons %>%
+ filter(raw_character_text == 'Marge Simpson' )
+#plotSentiment(lisa$normalized_text, 'total sentiment')
+
+```
+
+
+
+
